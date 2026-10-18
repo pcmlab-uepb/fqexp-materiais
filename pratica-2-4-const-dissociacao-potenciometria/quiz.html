@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prática 2.4 — Constante de Dissociação por Titulação Potenciométrica</title>
+<style>
+  :root{
+    --chalk:#f5f2e8; --yellow:#ffe97a; --pink:#e8a0d8; --cyan:#7fd4e8;
+    --green:#a5d6a7; --orange:#ffb74d; --ink:#16201b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    background:linear-gradient(160deg,#2f6e4f 0%,#265c43 55%,#1f5540 100%);
+    color:var(--chalk);
+    font-family:"DejaVu Sans","Verdana","Segoe UI",system-ui,sans-serif;
+    padding:28px 20px 60px; line-height:1.5;
+  }
+  .wrap{max-width:940px;margin:0 auto}
+  header{margin-bottom:22px}
+  .disc{font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.5rem;margin:.25rem 0 .5rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.9rem;color:rgba(245,242,232,.72)}
+  .bar{height:8px;border-radius:6px;background:rgba(22,32,27,.45);margin-top:16px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--cyan);transition:width .35s ease}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;
+       font-size:.86rem;color:rgba(245,242,232,.8);flex-wrap:wrap}
+  .toggle{cursor:pointer;border:2px solid rgba(245,242,232,.5);background:transparent;color:var(--chalk);
+          border-radius:999px;padding:6px 14px;font:inherit;font-size:.82rem}
+  .toggle[aria-pressed="true"]{background:var(--yellow);color:var(--ink);border-color:var(--yellow);font-weight:700}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.22);border-radius:16px;
+        padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+  .qnum{font-size:.82rem;color:var(--cyan);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+  .stem{font-size:1.18rem;font-weight:700;margin-bottom:20px}
+  .opts{display:grid;gap:11px}
+  button.opt{display:flex;gap:14px;align-items:flex-start;text-align:left;width:100%;
+    background:rgba(245,242,232,.06);border:2px solid rgba(245,242,232,.28);color:var(--chalk);
+    border-radius:12px;padding:14px 16px;font:inherit;font-size:1rem;cursor:pointer;transition:.15s}
+  button.opt:hover:not(:disabled){background:rgba(245,242,232,.14);border-color:var(--chalk)}
+  button.opt:disabled{cursor:default}
+  button.opt .k{font-weight:700;color:var(--cyan);min-width:1.2em}
+  button.opt.ok{background:rgba(165,214,167,.22);border-color:var(--green)}
+  button.opt.ok .k{color:var(--green)}
+  button.opt.bad{background:rgba(232,160,216,.18);border-color:var(--pink)}
+  button.opt.bad .k{color:var(--pink)}
+  button.opt.dim{opacity:.45}
+  .fb{margin-top:18px;border-left:5px solid var(--cyan);border-radius:8px;padding:14px 16px;
+      background:rgba(22,32,27,.42);font-size:.97rem}
+  .fb.good{border-left-color:var(--green)}
+  .fb.bad{border-left-color:var(--pink)}
+  .fb b{color:var(--yellow)}
+  .fb.good b{color:var(--green)}
+  .fb.bad b{color:var(--pink)}
+  .nav{margin-top:20px;display:flex;justify-content:flex-end;gap:12px}
+  .go{background:var(--cyan);color:var(--ink);border:0;border-radius:10px;padding:12px 26px;
+      font:inherit;font-weight:700;cursor:pointer}
+  .go:disabled{opacity:.4;cursor:not-allowed}
+  .count{font-variant-numeric:tabular-nums;color:var(--yellow);font-weight:700}
+  .done{text-align:center}
+  .score{font-size:3.2rem;font-weight:700;color:var(--cyan);text-shadow:0 3px 0 rgba(22,32,27,.5)}
+  .score small{font-size:1.2rem;color:rgba(245,242,232,.7)}
+  .verdict{margin:10px 0 22px;font-size:1.1rem;color:var(--yellow)}
+  .rev{text-align:left;background:rgba(22,32,27,.3);border:2px solid rgba(245,242,232,.18);
+       border-radius:14px;padding:18px;margin-top:8px}
+  .rev h3{font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan);margin-bottom:12px}
+  .rev li{list-style:none;padding:10px 0;border-bottom:1px solid rgba(245,242,232,.12);font-size:.94rem}
+  .rev li:last-child{border-bottom:0}
+  .rev .tag{font-weight:700}
+  .rev .tag.ok{color:var(--green)}
+  .rev .tag.no{color:var(--pink)}
+  .hint{font-size:.82rem;color:rgba(245,242,232,.6);margin-top:14px;text-align:center}
+</style></head><body>
+<div role="note" class="aviso-beta" style="box-sizing:border-box;flex:0 0 100%;width:100%;background:rgba(255,233,122,.15);border-left:6px solid #ffe97a;border-radius:10px;padding:15px 22px;margin:0 0 20px;color:#f5f2e8;font-family:inherit;font-size:.95rem;line-height:1.5"><strong>Material em versão beta.</strong> Este é um material de apoio em revisão — o conteúdo e a forma ainda podem ser alterados. A fonte de estudo prioritária da disciplina continua sendo a apostila da disciplina (Manual 2020.2) e o livro-texto (Castellan; Atkins; Rangel).</div>
+<div class="wrap">
+  <header>
+    <div class="disc">Físico-Química Experimental</div>
+    <h1>Prática 2.4 — Constante de Dissociação por Titulação Potenciométrica</h1>
+    <div class="meta">Princípio 12 (erro deliberado): cada questão tem um distrator que representa o erro típico do aluno na bancada, com feedback explicando por que está errado.</div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="row">
+      <span>Questão <b id="qi">1</b> de <b id="qn">0</b> · acertos: <b id="hits">0</b></span>
+      <button class="toggle" id="ta" aria-pressed="false">Modo aula (25s p/ revelar)</button>
+    </div>
+  </header>
+  <main id="main"></main>
+  <div class="hint">Atalhos: 1–4 respondem · Enter avança · R reinicia</div>
+</div>
+<script>
+const QUIZ = {"schema": "maic-like/quiz@1", "discipline": "Físico-Química Experimental", "lesson": "Prática 2.4 — Constante de Dissociação por Titulação Potenciométrica", "language": "pt-BR", "principle": "Princípio 12 (erro deliberado): cada questão tem um distrator que representa o erro típico do aluno na bancada, com feedback explicando por que está errado.", "_fonte": "Manual20202.txt — apostila EM USO da disciplina (117 pp.): 'EXPERIMENTO Nº10: DETERMINAÇÃO DA CONSTANTE DE DISSOCIAÇÃO DE UM ELETRÓLITO FRACO UTILIZANDO A TITULAÇÃO POTENCIOMÉTRICA' (linhas 3465-3783) — procedimento (pHmetro, calibração, adições), dedução pH = pKa + log(b/(a-b)) e pH = pKa na meia-neutralização, K(literatura) = 1,8e-5. Valores de referência de literatura externa (pKa = 4,756 a 25,0 °C; Debye-Hückel A = 0,509) — ver AUDITORIA_CIENTIFICA_2_4.md.", "_auditoria": "A alternativa CORRETA ocupa, no ARQUIVO, as letras D, B, A, C, B, D — quatro letras distintas, nenhuma respondendo a 6/6 — e o HTML ainda embaralha por Fisher-Yates a cada exibição. Corrija-se por CONTEÚDO, nunca por letra. Todos os números foram conferidos contra numeros_2_4.json (ex.: pH na meia-equivalência = 4,690; ΔpKa = −log γ(A⁻) = 0,064 em I = 0,0238 mol·L⁻¹; pH de equivalência = 8,67).", "questions": [{"id": "q1", "scene": "A2-2", "stem": "Numa titulação potenciométrica, o pKa de um ácido fraco tem qual unidade?", "options": [{"key": "A", "text": "mol·L⁻¹, a mesma unidade do Ka", "correct": false, "feedback": "Essa é a unidade do Ka, não do pKa. O pKa é −log de um número puro: ao tomar o logaritmo, a unidade DESAPARECE. Confundir os dois é o erro que a questão testa."}, {"key": "B", "text": "mol⁻¹·L, porque veio de um logaritmo", "correct": false, "feedback": "O logaritmo não inverte unidade — ele a remove. E o Ka de um monoácido tem mol·L⁻¹, não o inverso."}, {"key": "C", "text": "nenhuma a 25 °C, mas mol·L⁻¹ a outras temperaturas", "correct": false, "feedback": "O pKa MUDA com a temperatura, mas isso não muda a dimensão. Ele é adimensional em qualquer temperatura; o que varia é o valor."}, {"key": "D", "text": "nenhuma — o pKa é adimensional; quem carrega unidade, mol·L⁻¹, é o Ka", "correct": true, "feedback": "Correto. pKa = −log Ka é o logaritmo de um número puro (Ka dividido pela concentração padrão): dimensão nenhuma. O Ka, sim, sai em mol·L⁻¹. Não confunda pKa com pH nem com Ka."}]}, {"id": "q2", "scene": "A2-4", "stem": "Na meia-equivalência de uma titulação de ácido fraco com base forte, o pH é igual ao pKa. Por quê?", "options": [{"key": "A", "text": "Porque nesse ponto o ácido está totalmente dissociado", "correct": false, "feedback": "Se estivesse totalmente dissociado, ele seria um ácido FORTE e não haveria pKa a determinar. Na meia-equivalência metade do ácido ainda é HA."}, {"key": "B", "text": "Porque [A⁻] = [HA]: a razão vale 1 e o logaritmo de Henderson-Hasselbalch se anula", "correct": true, "feedback": "Correto. pH = pKa + log([A⁻]/[HA]). Na meia-neutralização metade do ácido virou acetato, então [A⁻] = [HA], a razão é 1, log 1 = 0, e sobra pH = pKa. É o coração da prática."}, {"key": "C", "text": "Porque toda a base adicionada neutralizou o ácido", "correct": false, "feedback": "Neutralizar TODO o ácido é o ponto de EQUIVALÊNCIA, não o de meia-equivalência. Lá o pH é básico (8,67), não o pKa."}, {"key": "D", "text": "Porque a força iônica se anula exatamente nesse ponto", "correct": false, "feedback": "A força iônica não se anula em ponto nenhum desta titulação — ela inclusive baixa o pKa que você mede. A igualdade pH = pKa vem da razão de concentrações, não da força iônica."}]}, {"id": "q3", "scene": "D1-3", "stem": "Nesta prática o pHmetro não é indicador visual. Como se determina, então, o ponto de equivalência?", "options": [{"key": "A", "text": "Pelo máximo de dpH/dV — o pico da derivada da curva", "correct": true, "feedback": "Correto. Plota-se pH × V e a derivada dpH/dV × V. O pico da derivada marca o volume de equivalência (10,0 mL aqui), sem depender de cor de indicador."}, {"key": "B", "text": "Pela mudança de cor de um indicador ácido-base", "correct": false, "feedback": "O manual não usa indicador: usa pHmetro. E um indicador mudaria de cor num intervalo, não num ponto — daí o erro de escolher indicador para este caso."}, {"key": "C", "text": "Pelo valor de pH igual a 7", "correct": false, "feedback": "pH = 7 é o ponto de neutralidade da água, não o de equivalência. Num ácido fraco com base forte, a equivalência cai em pH básico (8,67) — procurar o 7 daria um V_eq errado."}, {"key": "D", "text": "Pela condutividade mínima da solução", "correct": false, "feedback": "Condutividade é o observável da Prática 2.3, não desta. Aqui o instrumento é o pHmetro."}]}, {"id": "q4", "scene": "E1-4", "stem": "Na titulação de ácido acético com NaOH, o pH no ponto de equivalência é cerca de 8,7 — não 7. Por quê?", "options": [{"key": "A", "text": "Porque há excesso de NaOH nesse ponto", "correct": false, "feedback": "No ponto EXATO de equivalência não há excesso de base: as quantidades reagem por inteiro. O excesso só aparece depois dele."}, {"key": "B", "text": "Porque a água se dissocia mais nesse ponto", "correct": false, "feedback": "A autoionização da água é praticamente a mesma em toda a titulação; ela não explica um deslocamento de 1,7 unidade de pH."}, {"key": "C", "text": "Porque o acetato formado hidrolisa e libera OH⁻ — o sal é uma base fraca", "correct": true, "feedback": "Correto. Todo o ácido virou acetato de sódio. O acetato é a base conjugada de um ácido fraco: A⁻ + H₂O ⇌ HA + OH⁻. O meio fica básico (pH_eq = 7 + ½(pKa + log c_sal) = 8,67). Só ácido forte com base forte dá 7."}, {"key": "D", "text": "Porque o pHmetro tem um erro sistemático no ponto de equivalência", "correct": false, "feedback": "Um erro de calibração desloca a curva toda (±0,02 pH), não 1,7 unidade num ponto só. O desvio aqui é QUÍMICA, não instrumento."}]}, {"id": "q5", "scene": "E1-3", "stem": "O pKa lido na meia-equivalência deu 4,69 e o tabelado para o ácido acético é 4,76. Qual é a explicação?", "options": [{"key": "A", "text": "O eletrodo está descalibrado; o valor tabelado é o que vale", "correct": false, "feedback": "A calibração erra de forma SISTEMÁTICA e desloca a curva toda, mas só ±0,02 pH — não explica os 0,07. E o material não trata o medido como errado: explica o desvio."}, {"key": "B", "text": "O pHmetro lê ATIVIDADE: em I = 0,0238 mol·L⁻¹, a correção de atividade (ΔpKa = 0,064) leva 4,69 a 4,75", "correct": true, "feedback": "Correto. O eletrodo responde à atividade, não à concentração. O íon acetato é estabilizado pela atmosfera iônica, e γ(A⁻) = 0,86. A correção ΔpKa = −log γ(A⁻) = 0,064 leva 4,69 a 4,75 — e o desvio cai de −0,066 para −0,002."}, {"key": "C", "text": "O ácido acético não tem pKa tabelado, então os dois valores valem igualmente", "correct": false, "feedback": "Ele tem: 4,756 a 25,0 °C. E os dois valores NÃO valem igualmente: um é o termodinâmico, o outro é o aparente do meio — e a relação entre eles é quantificável."}, {"key": "D", "text": "O pKa depende da concentração do ácido e por isso não há valor fixo", "correct": false, "feedback": "O pKa TERMODINÂMICO é uma propriedade da substância e da temperatura. O que depende da força iônica é o valor APARENTE medido — e é justamente essa dependência que a correção de atividade remove."}]}, {"id": "q6", "scene": "D2-2", "stem": "Comparando o método da meia-equivalência com o ajuste da curva inteira, o correto é:", "options": [{"key": "A", "text": "Os dois precisam do volume de equivalência medido antes no gráfico", "correct": false, "feedback": "Só a meia-equivalência precisa: ela exige saber o V_eq para tomar a metade. O AJUSTE devolve o V_eq — não precisa dele como entrada."}, {"key": "B", "text": "A meia-equivalência é mais robusta, porque usa um ponto muito confiável", "correct": false, "feedback": "Ao contrário: usar UM ponto concentra todo o erro de leitura nele. O ajuste usa os 20 pontos e a incerteza vem do conjunto."}, {"key": "C", "text": "O ajuste usa apenas os pontos do salto, onde o pH varia mais", "correct": false, "feedback": "O ajuste usa TODOS os pontos, inclusive o platô de tampão e a cauda básica — é isso que o torna robusto."}, {"key": "D", "text": "O ajuste usa TODOS os pontos e devolve pKa, V_eq e a concentração — sem precisar achar o ponto no gráfico", "correct": true, "feedback": "Correto. O modelo de 3 parâmetros (pKa, V_total, c_ácido) é comparado com os 20 pontos de uma vez. Devolve os três, e não depende de identificar o ponto de meia-equivalência nem de acertar o V_eq no gráfico. Os dois métodos concordam (4,69 × 4,70), mas o ajuste é o que se reporta."}]}]};
+const SECS = 25;
+let i = 0, hits = 0, log = [], answered = false, timer = null, left = SECS, classMode = false;
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function startTimer(){
+  clearInterval(timer);
+  if(!classMode || answered) { return; }
+  left = SECS;
+  timer = setInterval(() => {
+    left--;
+    const el = document.getElementById('cd');
+    if(el) el.textContent = left;
+    if(left <= 0){ clearInterval(timer); revealByTimer(); }
+  }, 1000);
+}
+
+/* ── Embaralhamento das alternativas (correção de 13/out/2026) ────────────────
+   Defeito encontrado ao gerar o gabarito: a alternativa CORRETA caía sempre na
+   MESMA posição (A na Prática 3, B na Prática 2), porque a ordem do JSON era a
+   ordem exibida — o aluno percebe o padrão e acerta sem saber. Agora a ordem é
+   sorteada a cada exibição (Fisher-Yates) e as letras A–D são reatribuídas na
+   ordem da tela, para o atalho de teclado 1–4 continuar válido. O feedback de cada
+   distrator acompanha a alternativa, não a posição.
+
+   Ao escrever um quiz novo: NÃO pré-ordene as alternativas no JSON para
+   "espalhar" a correta — deixe o embaralhamento cuidar disso. */
+function embaralha(arr){
+  const a = arr.slice();
+  for(let j = a.length - 1; j > 0; j--){
+    const r = Math.floor(Math.random() * (j + 1));
+    const t = a[j]; a[j] = a[r]; a[r] = t;
+  }
+  return a;
+}
+const LETRAS = 'ABCDEFGH';
+let atual = [];                    // opções na ordem da tela, com a letra exibida
+
+function ordena(q){
+  atual = embaralha(q.options).map((o, n) => ({
+    key: LETRAS[n], text: o.text, correct: o.correct, feedback: o.feedback
+  }));
+  return atual;
+}
+
+function revealByTimer(){
+  if(answered) return;
+  answered = true;
+  atual.forEach(o => {
+    const b = document.querySelector('button.opt[data-k="'+o.key+'"]');
+    if(b){ b.disabled = true; if(o.correct) b.classList.add('ok'); else b.classList.add('dim'); }
+  });
+  showFeedback(null, atual.find(o => o.correct));
+}
+
+function render(){
+  if(i >= QUIZ.questions.length) return finish();
+  answered = false;
+  const q = QUIZ.questions[i];
+  const opts = ordena(q);                    // sorteia a ordem a cada exibição
+  $('#qi').textContent = i + 1;
+  $('#hits').textContent = hits;
+  $('#bar').style.width = (i / QUIZ.questions.length * 100) + '%';
+  $('#main').innerHTML =
+    '<div class="card">' +
+      '<div class="qnum">Questão ' + (i+1) + '</div>' +
+      '<div class="stem">' + esc(q.stem) + '</div>' +
+      '<div class="opts">' + opts.map(o =>
+        '<button class="opt" data-k="' + o.key + '"><span class="k">' + o.key +
+        '</span><span>' + esc(o.text) + '</span></button>').join('') + '</div>' +
+      '<div id="fb"></div>' +
+      '<div class="nav"><button class="go" id="next" disabled>Próxima →</button></div>' +
+    '</div>';
+  document.querySelectorAll('button.opt').forEach(b =>
+    b.addEventListener('click', () => answer(b.dataset.k)));
+  $('#next').addEventListener('click', () => { i++; render(); });
+  if(classMode){
+    const f = document.createElement('div');
+    f.className = 'hint';
+    f.innerHTML = 'Revelando em <span class="count" id="cd">' + SECS + '</span>s';
+    $('#main').querySelector('.card').appendChild(f);
+    startTimer();
+  }
+}
+
+function answer(k){
+  if(answered) return;
+  answered = true; clearInterval(timer);
+  const q = QUIZ.questions[i];
+  const picked = atual.find(o => o.key === k);
+  const right = atual.find(o => o.correct);
+  atual.forEach(o => {
+    const b = document.querySelector('button.opt[data-k="'+o.key+'"]');
+    b.disabled = true;
+    if(o.correct) b.classList.add('ok');
+    else if(o.key === k) b.classList.add('bad');
+    else b.classList.add('dim');
+  });
+  if(picked.correct) hits++;
+  log.push({stem: q.stem, picked: k, right: right.key, ok: picked.correct});
+  $('#hits').textContent = hits;
+  showFeedback(picked, right);
+  $('#next').disabled = false;
+  $('#next').focus();
+}
+
+function showFeedback(picked, right){
+  const cls = picked ? (picked.correct ? 'good' : 'bad') : 'bad';
+  const head = picked
+    ? (picked.correct ? 'Correto — alternativa ' + picked.key : 'Errado — você marcou ' + picked.key + '; a correta é ' + right.key)
+    : 'Tempo esgotado — a correta é ' + right.key;
+  const body = picked ? picked.feedback : right.feedback;
+  const fb = $('#fb');
+  fb.innerHTML = '<div class="fb ' + cls + '"><b>' + head + '.</b> ' + esc(body) + '</div>';
+  const n = $('#next'); if(n) n.disabled = false;
+}
+
+function finish(){
+  clearInterval(timer);
+  $('#bar').style.width = '100%';
+  const pct = Math.round(hits / QUIZ.questions.length * 100);
+  const verdict = pct === 100 ? 'Domínio completo do conceito.'
+    : pct >= 67 ? 'Bom — revise as questões erradas antes da prática.'
+    : 'Vale reler a Parte 4 e a Parte 5 antes de vir ao laboratório.';
+  $('#main').innerHTML =
+    '<div class="card done">' +
+      '<div class="score">' + hits + '<small>/' + QUIZ.questions.length + '</small></div>' +
+      '<div class="verdict">' + verdict + '</div>' +
+      '<div class="rev"><h3>Revisão</h3><ul>' +
+        log.map((l, n) => '<li><span class="tag ' + (l.ok ? 'ok' : 'no') + '">' +
+          (l.ok ? '✔' : '✘') + '</span> <b>Q' + (n+1) + '.</b> ' + esc(l.stem) +
+          (l.ok ? '' : ' <em>(marcou ' + l.picked + '; correta: ' + l.right + ')</em>') + '</li>').join('') +
+      '</ul></div>' +
+      '<div class="nav" style="justify-content:center"><button class="go" id="again">Refazer</button></div>' +
+    '</div>';
+  $('#again').addEventListener('click', () => { i = 0; hits = 0; log = []; render(); });
+}
+
+$('#ta').addEventListener('click', e => {
+  classMode = !classMode;
+  e.target.setAttribute('aria-pressed', String(classMode));
+  render();
+});
+$('#qn').textContent = QUIZ.questions.length;
+document.addEventListener('keydown', e => {
+  if(e.key >= '1' && e.key <= '4'){
+    const k = ['A','B','C','D'][Number(e.key) - 1];
+    if(!answered && document.querySelector('button.opt[data-k="'+k+'"]')) answer(k);
+  }
+  if(e.key === 'Enter'){ const n = document.getElementById('next'); if(n && !n.disabled) n.click(); }
+  if(e.key.toLowerCase() === 'r'){ i = 0; hits = 0; log = []; render(); }
+});
+render();
+</script></body></html>

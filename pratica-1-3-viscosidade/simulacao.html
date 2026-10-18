@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Viscosímetro de Ostwald — simulação · Prática 1.3</title>
+<style>
+:root{--bg:#12251c;--panel:#1d3428;--ink:#f5f2e8;--dim:#9fb8a8;--acc:#7fd4e8;
+      --y:#ffe97a;--g:#a5d6a7;--o:#ffb74d;--pi:#e8a0d8;--err:#ff8a80}
+*{box-sizing:border-box}
+body{margin:0;font-family:"DejaVu Sans",system-ui,sans-serif;background:var(--bg);
+     color:var(--ink);line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 20px 60px}
+h1{font-size:1.42rem;margin:.2em 0 .1em}
+.sub{color:var(--dim);font-size:.92rem;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:minmax(300px,1fr) minmax(360px,1.25fr);gap:20px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid #2f4c3b;border-radius:14px;padding:16px 18px}
+h2{font-size:1rem;margin:.1em 0 .7em;color:var(--acc);letter-spacing:.4px;
+   text-transform:uppercase}
+.lab{font-size:.82rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;
+     margin:12px 0 6px}
+.btns{display:flex;flex-wrap:wrap;gap:7px}
+button{font:inherit;font-size:.87rem;padding:7px 12px;border-radius:9px;cursor:pointer;
+       background:#26402f;color:var(--ink);border:1px solid #3a5c47;transition:.13s}
+button:hover{background:#2f5139;border-color:#4d7a5d}
+button[aria-pressed=true]{background:var(--acc);color:#0d1c15;border-color:var(--acc);
+                          font-weight:bold}
+button:disabled{opacity:.4;cursor:not-allowed}
+.big{width:100%;margin-top:16px;padding:13px;font-size:1rem;font-weight:bold;
+     background:var(--y);color:#22301f;border:none}
+.big:hover{background:#fff0a0}
+.big:disabled{background:#3b5344;color:#7d9686}
+svg{display:block;margin:0 auto;background:#0f2018;border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:.9rem;margin-top:8px}
+th,td{padding:6px 7px;text-align:right;border-bottom:1px solid #2f4c3b}
+th{color:var(--dim);font-weight:normal;font-size:.78rem;text-transform:uppercase}
+td:first-child,th:first-child{text-align:left}
+.mono{font-family:"DejaVu Sans Mono",monospace}
+.calc{margin-top:12px;padding:12px 14px;background:#16281f;border-radius:10px;
+      border-left:3px solid var(--acc);font-size:.9rem;display:none}
+.calc.on{display:block}
+.calc .eq{margin:7px 0;font-family:"DejaVu Sans Mono",monospace;color:var(--y);
+          font-size:.92rem;overflow-x:auto}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.78rem;
+       font-weight:bold}
+.ok{background:#1f4d33;color:var(--g)} .warn{background:#4d4520;color:var(--y)}
+.bad{background:#4d2320;color:var(--err)}
+.note{font-size:.84rem;color:var(--dim);margin-top:12px;padding-top:10px;
+      border-top:1px solid #2f4c3b}
+.speed{display:flex;gap:6px;margin-top:8px}
+.speed button{flex:1;font-size:.8rem;padding:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Viscosímetro de Ostwald — simulação</h1>
+  <div class="sub">Físico-Química Experimental · Prática 1.3 · mede-se o tempo de escoamento
+    de A até B; a viscosidade vem da comparação com a água</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>1 · Escolher o líquido</h2>
+    <div class="btns" id="liq"></div>
+    <div class="lab">Temperatura do banho</div>
+    <div class="btns" id="temp"></div>
+
+    <h2 style="margin-top:18px">2 · Medir</h2>
+    <svg id="vis" width="300" height="290" viewBox="0 0 300 290"
+         role="img" aria-label="viscosímetro de Ostwald com menisco">
+      <g stroke="#f5f2e8" stroke-width="2.6" fill="none" stroke-linejoin="round">
+        <path id="tube" d=""/>
+      </g>
+      <path id="liquido" d="" fill="#7fd4e8" opacity=".55"/>
+      <line id="markA" x1="196" y1="96" x2="234" y2="96" stroke="#ffe97a" stroke-width="3.4"/>
+      <line id="markB" x1="196" y1="188" x2="234" y2="188" stroke="#ffe97a" stroke-width="3.4"/>
+      <text x="242" y="101" fill="#ffe97a" font-size="19" font-weight="bold">A</text>
+      <text x="242" y="193" fill="#ffe97a" font-size="19" font-weight="bold">B</text>
+      <text x="150" y="24" fill="#a5d6a7" font-size="13" text-anchor="middle"
+            id="cap">capilar fino</text>
+      <text x="150" y="278" fill="#9fb8a8" font-size="12.5" text-anchor="middle"
+            id="st">em repouso</text>
+    </svg>
+
+    <div class="speed" id="speed"></div>
+    <button class="big" id="run">Aspirar e soltar  ▸  cronometrar A → B</button>
+    <div class="note">A animação corre <b>acelerada</b>; o cronômetro mostra o tempo
+      <b>físico real</b> que o líquido levaria. Cada medição traz o espalhamento típico
+      de leitura humana (± 0,3 s).</div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Registro das medidas</h2>
+    <table>
+      <thead><tr><th>#</th><th>t (s)</th><th>t média (s)</th></tr></thead>
+      <tbody id="tb"><tr><td colspan="3" style="color:var(--dim)">— nenhuma medida —</td></tr></tbody>
+    </table>
+    <div class="lab">Densidade do líquido (da Prática 1, picnometria)</div>
+    <div class="mono" id="rho">—</div>
+
+    <div class="calc" id="calc"></div>
+
+    <h2 style="margin-top:18px">Referência × medido</h2>
+    <table>
+      <thead><tr><th>líquido</th><th>η tabelada</th><th>desvio</th></tr></thead>
+      <tbody id="cmp"></tbody>
+    </table>
+    <div class="note" id="tip">Escolha um líquido e faça as três medidas para liberar
+      o cálculo.</div>
+  </div>
+</div>
+<script>
+const D = {"K_s_por_cSt":67.2951,"dados":{"acetona":{"rho_gcm3":0.7844,"temperaturas":{"20":{"eta_mPas":0.34099,"t_s":29.254},"25":{"eta_mPas":0.303,"t_s":25.995},"30":{"eta_mPas":0.27141,"t_s":23.284}}},"água":{"rho_gcm3":0.99821,"temperaturas":{"20":{"eta_mPas":1.0016,"t_s":67.524},"25":{"eta_mPas":0.89,"t_s":60.0},"30":{"eta_mPas":0.79083,"t_s":53.315}}},"etanol":{"rho_gcm3":0.785,"temperaturas":{"20":{"eta_mPas":1.20867,"t_s":103.615},"25":{"eta_mPas":1.074,"t_s":92.07},"30":{"eta_mPas":0.96201,"t_s":82.47}}},"sacarose 10%":{"rho_gcm3":1.04003,"temperaturas":{"20":{"eta_mPas":1.32399,"t_s":85.669},"25":{"eta_mPas":1.16781,"t_s":75.563},"30":{"eta_mPas":1.03005,"t_s":66.649}}},"sacarose 20%":{"rho_gcm3":1.08297,"temperaturas":{"20":{"eta_mPas":1.96997,"t_s":122.413},"25":{"eta_mPas":1.72471,"t_s":107.172},"30":{"eta_mPas":1.50998,"t_s":93.829}}},"sacarose 30%":{"rho_gcm3":1.12913,"temperaturas":{"20":{"eta_mPas":3.29929,"t_s":196.635},"25":{"eta_mPas":2.83173,"t_s":168.768},"30":{"eta_mPas":2.43043,"t_s":144.851}}},"sacarose 40%":{"rho_gcm3":1.17823,"temperaturas":{"20":{"eta_mPas":6.21968,"t_s":355.239},"25":{"eta_mPas":5.23118,"t_s":298.781},"30":{"eta_mPas":4.39977,"t_s":251.295}}}},"temperaturas":[20,25,30],"ordem":["acetona","água","etanol","sacarose 10%","sacarose 20%","sacarose 30%","sacarose 40%"]};
+const NOMES = {"acetona": "Acetona", "água": "Água destilada", "etanol": "Álcool etílico", "sacarose 10%": "Sacarose 10 %", "sacarose 20%": "Sacarose 20 %", "sacarose 30%": "Sacarose 30 %", "sacarose 40%": "Sacarose 40 %"};
+const REF = {"água": {"eta_mPas": 0.89, "rho_gcm3": 0.99821}, "sacarose 10%": {"eta_mPas": 1.1678140711862264, "rho_gcm3": 1.04003}, "sacarose 20%": {"eta_mPas": 1.7247318632181645, "rho_gcm3": 1.08297}, "sacarose 30%": {"eta_mPas": 2.8318151822139277, "rho_gcm3": 1.12913}, "sacarose 40%": {"eta_mPas": 5.231443395469362, "rho_gcm3": 1.17823}, "etanol": {"eta_mPas": 1.074, "rho_gcm3": 0.785}, "acetona": {"eta_mPas": 0.303, "rho_gcm3": 0.7844}};
+const svgNS = "http://www.w3.org/2000/svg";
+let liq = "água", temp = 25, speed = 4, medidas = [], timer = null, inclinado = false;
+
+/* geometria do tubo em U (coordenadas do viewBox) */
+const TUBE = "M 78 60 L 78 236 Q 78 258 100 258 L 200 258 Q 222 258 222 236 L 222 60";
+const TOPO_A = 96, TOPO_B = 188;          // marcas A (superior) e B (inferior)
+
+function el(id){ return document.getElementById(id); }
+
+function montaBotoes(){
+  const l = el("liq");
+  l.innerHTML = "";                          /* limpa: sem isto os botões DUPLICAM a cada troca */
+  Object.keys(NOMES).forEach(n => {          /* NOMES é objeto — não forEach direto */
+    const b = document.createElement("button");
+    b.textContent = NOMES[n]; b.dataset.k = n;
+    b.setAttribute("aria-pressed", n === liq);
+    /* ORDEM: limpa() ANTES de desenha() — limpa() zera o painel da densidade,
+       então desenha() tem de ser o último a escrever nele */
+    b.onclick = () => { liq = n; medidas = []; limpa(); desenha(); montaBotoes(); };
+    l.appendChild(b);
+  });
+  const t = el("temp");
+  t.innerHTML = "";
+  [20,25,30].forEach(x => {
+    const b = document.createElement("button");
+    b.textContent = x + " °C"; b.dataset.k = x;
+    b.setAttribute("aria-pressed", x === temp);
+    b.onclick = () => { temp = x; medidas = []; limpa(); desenha(); montaBotoes(); };
+    t.appendChild(b);
+  });
+  const s = el("speed");
+  s.innerHTML = "";
+  [[1,"×1 real"],[2,"×2"],[4,"×4"],[8,"×8"]].forEach(([v,lab]) => {
+    const b = document.createElement("button");
+    b.textContent = lab; b.setAttribute("aria-pressed", v === speed);
+    b.onclick = () => { speed = v; montaBotoes(); };
+    s.appendChild(b);
+  });
+}
+
+function limpa(){
+  el("tb").innerHTML = '<tr><td colspan="3" style="color:var(--dim)">— nenhuma medida —</td></tr>';
+  el("calc").className = "calc"; el("rho").textContent = "—";
+  el("tip").textContent = "Escolha um líquido e faça as três medidas para liberar o cálculo.";
+  el("st").textContent = "em repouso";
+}
+
+function atual(){ return D.dados[liq].temperaturas[String(temp)]; }
+function rho(){ return D.dados[liq].rho_gcm3; }
+
+/* menisco: y entre TOPO_A (nível alto) e TOPO_B (nível baixo) */
+function nivel(yTopo){
+  el("liquido").setAttribute("d",
+    `M 74 ${yTopo} L 74 236 Q 74 262 100 262 L 200 262 Q 226 262 226 236 L 226 ${yTopo}` +
+    ` L 218 ${yTopo} L 218 236 Q 218 254 200 254 L 100 254 Q 82 254 82 236 L 82 ${yTopo} Z`);
+}
+
+function desenha(){
+  el("tube").setAttribute("d", TUBE);
+  nivel(TOPO_B);
+  const e = atual();
+  el("cap").textContent = NOMES[liq] + " @ " + temp + " °C";
+  const r = rho();
+  el("rho").innerHTML = r.toFixed(5).replace(".", ",") + " g/cm³" +
+    `  <span style="color:var(--dim)">· η tabelada ` +
+    e.eta_mPas.toFixed(4).replace(".", ",") + " mPa·s</span>";
+  el("cmp").innerHTML = NOMES_KEYS().map(k => {
+    const ee = D.dados[k].temperaturas[String(temp)].eta_mPas;
+    return `<tr><td>${NOMES[k]}</td><td class="mono">${ee.toFixed(4).replace(".",",")}</td>
+            <td class="mono">—</td></tr>`;
+  }).join("");
+  marca(k => {});
+}
+function NOMES_KEYS(){ return NOMES_ORDEM; }
+const NOMES_ORDEM = Object.keys(NOMES).sort(
+  (a,b) => D.dados[a].temperaturas["25"].t_s - D.dados[b].temperaturas["25"].t_s);
+
+function marca(fn){ /* reservado para realce por linha */ }
+
+/* ── a medição: tempo físico t = K·η/ρ, exibido acelerado */
+function medir(){
+  if (medidas.length >= 3) return;
+  const e = atual(), t_fis = e.t_s;
+  const total = t_fis / speed * 1000;         // ms de animação
+  const t0 = performance.now();
+  el("run").disabled = true; el("st").textContent = "escoando…";
+  function passo(now){
+    const f = Math.min(1, (now - t0) / total);
+    nivel(TOPO_A + (TOPO_B - TOPO_A) * f);     // desce de A até B
+    if (f < 1) { timer = requestAnimationFrame(passo); }
+    else {
+      /* leitura humana: espalhamento de ±0,3 s */
+      const s = (Math.random() * 2 - 1) * 0.3;
+      const t = Math.round((t_fis + s) * 10) / 10;
+      medidas.push(t);
+      el("st").textContent = "medida " + medidas.length + " registrada";
+      mostraMedidas(); el("run").disabled = medidas.length >= 3;
+    }
+  }
+  timer = requestAnimationFrame(passo);
+}
+
+function mostraMedidas(){
+  const n = medidas.length;
+  const media = medidas.reduce((a,b) => a+b, 0) / n;
+  el("tb").innerHTML =
+    medidas.map((t,i) => `<tr><td>${i+1}ª</td><td class="mono">${t.toFixed(1).replace(".",",")}</td>
+       <td class="mono">${i === n-1 ? media.toFixed(2).replace(".",",") : ""}</td></tr>`).join("") +
+    (n < 3 ? `<tr><td>${n+1}ª</td><td colspan="2" style="color:var(--dim)">aguardando</td></tr>` : "");
+  if (n >= 3) calcula(media);
+}
+
+/* ── o cálculo ensinado passo a passo (mesma ordem do vídeo) */
+function calcula(tMedio){
+  const tab = REF["água"];                        // água: referência
+  const r = rho(), rA = D.dados["água"].rho_gcm3;
+  const tA = D.dados["água"].temperaturas[String(temp)].t_s;
+  const etaA = REF["água"].eta_mPas * (D.dados["água"].temperaturas[String(temp)].eta_mPas /
+                                       D.dados["água"].temperaturas["25"].eta_mPas);
+  const num = r * tMedio, den = rA * tA;
+  const rel = num / den, eta = rel * etaA;
+  const ref = atual().eta_mPas;
+  const dv = 100 * (eta - ref) / ref;
+  const cls = Math.abs(dv) < 5 ? "ok" : (Math.abs(dv) < 10 ? "warn" : "bad");
+  const txt = Math.abs(dv) < 5 ? "excelente" : (Math.abs(dv) < 10 ? "aceitável" : "investigue");
+  el("calc").className = "calc on";
+  el("calc").innerHTML = `
+    <div><b>Passo 1 — viscosidade relativa</b> (mesmo instrumento, mesmo volume;
+      a pressão hidrostática se cancela)</div>
+    <div class="eq">η/η<sub>água</sub> = (ρ·t)/(ρ<sub>água</sub>·t<sub>água</sub>)
+      = (${r.toFixed(5).replace(".",",")} × ${tMedio.toFixed(2).replace(".",",")})
+      / (${rA.toFixed(5).replace(".",",")} × ${tA.toFixed(2).replace(".",",")})
+      = ${num.toFixed(2).replace(".",",")} / ${den.toFixed(2).replace(".",",")}
+      = <b>${rel.toFixed(4).replace(".",",")}</b></div>
+    <div style="margin-top:10px"><b>Passo 2 — viscosidade dinâmica</b>
+      (multiplica pela viscosidade da água a ${temp} °C, que é tabelada)</div>
+    <div class="eq">η = ${rel.toFixed(4).replace(".",",")} × ${etaA.toFixed(4).replace(".",",")}
+      = <b>${eta.toFixed(4).replace(".",",")} mPa·s</b></div>
+    <div style="margin-top:10px">referência tabelada: <b>${ref.toFixed(4).replace(".",",")}</b>
+      mPa·s &nbsp;→&nbsp; desvio
+      <b>${dv >= 0 ? "+" : ""}${dv.toFixed(2).replace(".",",")} %</b>
+      <span class="badge ${cls}">${txt}</span></div>`;
+  el("tip").innerHTML = "Se o desvio passar de 10 %, procure a causa antes de concluir " +
+    "que o método falhou: resíduo no capilar, bolha, ou o instrumento fora da vertical.";
+  /* comparação por líquido, com o desvio desta medição */
+  el("cmp").innerHTML = NOMES_ORDEM.map(k => {
+    const ee = D.dados[k].temperaturas[String(temp)].eta_mPas;
+    const same = (k === liq);
+    return `<tr><td>${NOMES[k]}${same ? " ◂" : ""}</td>
+      <td class="mono">${ee.toFixed(4).replace(".",",")}</td>
+      <td class="mono">${same ? (dv >= 0 ? "+" : "") + dv.toFixed(2).replace(".",",") + " %" : "—"}</td></tr>`;
+  }).join("");
+}
+
+el("run").onclick = medir;
+montaBotoes(); desenha();
+</script>
+</div>
+</body>
+</html>

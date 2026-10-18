@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulação — Densidade por Picnometria e Densimetria (Prática 1.2)</title>
+<style>
+  :root{--chalk:#f5f2e8;--yellow:#ffe97a;--pink:#e8a0d8;--cyan:#7fd4e8;--green:#a5d6a7;
+        --orange:#ffb74d;--ink:#16201b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:linear-gradient(160deg,#2f6e4f,#265c43 55%,#1f5540);color:var(--chalk);
+       font-family:"DejaVu Sans","Verdana",system-ui,sans-serif;line-height:1.5;padding:26px 18px 70px}
+  .wrap{max-width:1080px;margin:0 auto}
+  header{margin-bottom:20px}
+  .disc{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.45rem;margin:.25rem 0 .4rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.9rem;color:rgba(245,242,232,.75)}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.2);border-radius:16px;
+        padding:20px;margin-top:18px}
+  .card h2{font-size:1.06rem;color:var(--cyan);margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  canvas{background:rgba(15,40,30,.55);border-radius:12px;border:1px solid rgba(245,242,232,.18);
+         max-width:100%}
+  label{font-size:.85rem;color:rgba(245,242,232,.85);display:block;margin-top:10px}
+  input[type=number],select{width:170px;background:rgba(245,242,232,.08);
+        border:1.5px solid rgba(245,242,232,.3);color:var(--chalk);border-radius:8px;
+        padding:5px 8px;font:inherit;font-size:.9rem}
+  input[type=range]{width:100%;accent-color:#7fd4e8;margin-top:4px}
+  input[type=checkbox]{accent-color:#ffb74d;margin-right:6px}
+  .out{font-size:.94rem;background:rgba(22,32,27,.42);border-left:5px solid var(--cyan);
+       border-radius:8px;padding:11px 13px;margin-top:12px;white-space:pre-wrap}
+  .out b{color:var(--yellow)}
+  .ok{border-left-color:var(--green)}
+  .warn{border-left-color:var(--pink)}
+  .tiny{font-size:.8rem;color:rgba(245,242,232,.7);margin-top:8px}
+  table{width:100%;border-collapse:collapse;font-size:.88rem;margin-top:8px}
+  th,td{padding:5px 7px;border-bottom:1px solid rgba(245,242,232,.14);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--yellow);font-size:.82rem}
+</style></head><body>
+<div class="wrap">
+<header>
+  <div class="disc">Físico-Química Experimental · 2026.2 · UEPB/PCMLab</div>
+  <h1>Simulação — Prática 1.2 · Densidade por Picnometria e Densimetria</h1>
+  <div class="meta">picnômetro de 10 mL · V = m(H₂O)/ρ(H₂O,T) · curva de calibração da sacarose · teor da Coca-Cola</div>
+</header>
+
+<div class="card">
+  <h2>Painel 1 · O picnômetro: calibre, meça e veja quem erra</h2>
+  <div class="grid">
+    <div>
+      <label>Temperatura da bancada: <b id="lbT">20,0 °C</b></label>
+      <input type="range" id="T" min="10" max="29" step="1" value="20">
+      <label>Líquido no picnômetro</label>
+      <select id="liq">
+        <option value="agua">água destilada (calibra)</option>
+        <option value="sac10">sacarose 10 % (m/v)</option>
+        <option value="sac20">sacarose 20 % (m/v)</option>
+        <option value="sac30">sacarose 30 % (m/v)</option>
+        <option value="sac40" selected>sacarose 40 % (m/v)</option>
+        <option value="et40">etanol 40 % (v/v)</option>
+        <option value="et80">etanol 80 % (v/v)</option>
+        <option value="cola">Coca-Cola degaseificada</option>
+        <option value="bateria">solução de bateria (1,25 g/mL)</option>
+      </select>
+      <label><input type="checkbox" id="gota"> gota externa no picnômetro (+0,15 g)</label>
+      <label><input type="checkbox" id="bolha"> bolha de ar retida (0,10 mL)</label>
+      <label>erro multiplicativo da balança: <b id="lbcal">0,0 %</b></label>
+      <input type="range" id="cal" min="-2" max="2" step="0.1" value="0">
+    </div>
+    <div>
+      <div class="out" id="s1"></div>
+      <div class="out ok" id="s4"></div>
+    </div>
+  </div>
+  <div class="tiny">Os valores de referência a 20,0 °C vêm da tabela de densidade de sacarose
+  (Brix/ICUMSA), da Tabela 2 do manual para o etanol e do valor declarado da solução de bateria.
+  A Tabela 1 do manual dá ρ(H₂O,T) de 10 a 29 °C. Todo número é EXEMPLO ILUSTRATIVO.</div>
+</div>
+
+<div class="card">
+  <h2>Painel 2 · A curva de calibração da sacarose e o teor da Coca-Cola</h2>
+  <div class="grid">
+    <div>
+      <canvas id="cv" width="520" height="330"></canvas>
+      <table id="tb"></table>
+    </div>
+    <div>
+      <div class="out" id="s2"></div>
+      <label>densidade LIDA da amostra desconhecida: <b id="lbrho">1,04221</b> g·cm⁻³</label>
+      <input type="range" id="esp" min="0.998" max="1.16" step="0.00001" value="1.04221">
+      <label><input type="checkbox" id="deg" checked> Coca-Cola degaseificada (aberta de um dia para o outro)</label>
+      <div class="out" id="s3"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Painel 3 · O densímetro e o orçamento de incerteza</h2>
+  <div class="out" id="s5"></div>
+  <div class="out" id="s6"></div>
+</div>
+
+<div class="card">
+  <h2>Auto-teste embutido (o mesmo código que o aluno roda)</h2>
+  <div class="out" id="at"></div>
+</div>
+
+<div class="card">
+  <h2>Roteiro de investigação</h2>
+  <div class="tiny">1. Calibre: ponha <b>água</b> e veja o volume real. Depois mude a temperatura e
+  recalibre — o volume muda?<br>
+  2. Ligue a <b>gota externa</b> e o <b>erro multiplicativo</b>. Em quantos σ o desvio cai? É erro
+  sistemático ou aleatório?<br>
+  3. Construa a curva: repare que o R² é altíssimo e que os <b>resíduos alternam</b>. O que o R² não
+  está dizendo?<br>
+  4. Desligue o <b>degaseamento</b> e veja o teor da cola mudar. A explicação é física ou é erro de
+  medida?</div>
+</div>
+</div>
+
+<script>
+/* ───────── dados (proveniência declarada) ───────── */
+// Tabela 1 do manual (L694-705) — ρ(H₂O) em g/cm³ de 10 a 29 °C
+const TAB1 = {10:0.999700,11:0.999605,12:0.999498,13:0.999377,14:0.999244,15:0.999099,
+              16:0.998943,17:0.998774,18:0.998595,19:0.998405,20:0.998203,21:0.997992,
+              22:0.997770,23:0.997538,24:0.997296,25:0.997044,26:0.996783,27:0.996512,
+              28:0.996232,29:0.995944};
+// referência a 20 °C e sensibilidade térmica — EXEMPLO ILUSTRATIVO, declarado
+const LIQ = {
+  agua:   {nome:"água destilada",      rho:0.998203, d:0.00020, u:0},
+  sac10:  {nome:"sacarose 10 % (m/v)", rho:1.03821, d:0.00035, u:0},
+  sac20:  {nome:"sacarose 20 % (m/v)", rho:1.07722, d:0.00035, u:0},
+  sac30:  {nome:"sacarose 30 % (m/v)", rho:1.11523, d:0.00035, u:0},
+  sac40:  {nome:"sacarose 40 % (m/v)", rho:1.15223, d:0.00035, u:0},
+  et40:   {nome:"etanol 40 % (v/v)",   rho:0.94719, d:0.00090, u:0},
+  et80:   {nome:"etanol 80 % (v/v)",   rho:0.85617, d:0.00100, u:0},
+  cola:   {nome:"Coca-Cola degaseificada", rho:1.04221, d:0.00050, u:0},
+  bateria:{nome:"solução de bateria",  rho:1.25000, d:0.00040, u:0}
+};
+const M_H2O = 9.98, T0 = 20;             // m(H₂O) e a temperatura da calibração
+const V_REAL = M_H2O / TAB1[T0];         // 9,9980 cm³
+const U_REL = 0.001162;                  // u(ρ)/ρ com a balança de 0,01 g (GUM)
+const SERIE = ["sac10","sac20","sac30","sac40"];
+const C_MV = {sac10:10, sac20:20, sac30:30, sac40:40};
+const SLOPE = 0.003801;                  // ∂ρ/∂C a 20 °C, de numeros_1_2.json
+
+const $ = (s) => document.querySelector(s);
+const f2 = (x) => x.toFixed(2).replace(".", ",");
+const f4 = (x) => x.toFixed(4).replace(".", ",");
+const f5 = (x) => x.toFixed(5).replace(".", ",");
+const CASOS = [];
+function caso(nome, ok, det){ CASOS.push({nome:nome, ok:!!ok, det:det||""}); }
+
+function rhoEm(k, T){ return LIQ[k].rho + LIQ[k].d * (T - T0); }
+
+/* ───────── medição pelo picnômetro ───────── */
+function medir(){
+  const T = +$("#T").value, k = $("#liq").value;
+  const V = V_REAL;
+  const rho = rhoEm(k, T);
+  let m = V * rho;
+  if($("#gota").checked)  m += 0.15;
+  if($("#bolha").checked) m -= 0.10 * rho;
+  m *= (1 + (+$("#cal").value)/100);
+  return {T:T, k:k, V:V, rho:rho, m:m, rhoMed:m/V};
+}
+function pinta(){
+  const r = medir();
+  const dev = (r.rhoMed - r.rho) / r.rho * 100;
+  const sig = Math.abs(dev) / (U_REL*100);
+  $("#lbT").textContent = f2(r.T) + " °C";
+  $("#lbcal").textContent = f2(+$("#cal").value) + " %";
+  const cls = sig < 1 ? "ok" : "warn";
+  $("#s1").className = "out " + cls;
+  $("#s1").innerHTML =
+    "picnômetro de 10 mL — volume real <b>V = " + f4(r.V) + " cm³</b>\n" +
+    "m(H₂O) = " + f2(M_H2O) + " g  ·  ρ(H₂O," + f2(r.T) + " °C) = " + f5(TAB1[r.T]) + " g·cm⁻³\n" +
+    "líquido: " + LIQ[r.k].nome + "\n" +
+    "m(vazio) = " + f2(16.84) + " g  ·  m(cheio) = " + f2(16.84 + r.m) + " g\n" +
+    "m(líquido) = " + f4(r.m) + " g\n" +
+    "ρ medida = <b>" + f5(r.rhoMed) + " g·cm⁻³</b>\n" +
+    "ρ de referência a " + f2(r.T) + " °C = " + f5(r.rho) + " g·cm⁻³\n" +
+    "desvio = " + (dev>=0?"+":"") + f3(dev) + " %   →   <b>" + f2(sig) + " σ</b>" +
+    (sig < 1 ? "  (consistente)" : "  (acima da incerteza: procure a causa)");
+  $("#s4").innerHTML =
+    "ORÇAMENTO (k = 1, balança de 0,01 g)\n" +
+    "u(m_líq)/m = 0,0818 %  ·  u(V)/V = 0,0825 %\n" +
+    "u(ρ)/ρ = <b>0,1162 %</b>  →  empate: massa 50 % · volume 50 %\n" +
+    "k = 2 (≈ 95 %)  →  <b>0,232 %</b> = " + f5(0.00232*LIQ[r.k].rho) + " g·cm⁻³";
+}
+function f3(x){ return x.toFixed(3).replace(".", ","); }
+
+/* ───────── a curva de calibração ───────── */
+function ajuste(){
+  const T = +$("#T").value;
+  const xs = SERIE.map(k=>C_MV[k]), ys = SERIE.map(k=>rhoEm(k,T));
+  const n = xs.length, sx = xs.reduce((a,b)=>a+b,0), sy = ys.reduce((a,b)=>a+b,0);
+  const sxx = xs.reduce((a,b)=>a+b*b,0), sxy = xs.reduce((a,b,i)=>a+b*ys[i],0);
+  const a = (n*sxy - sx*sy)/(n*sxx - sx*sx), b = (sy - a*sx)/n;
+  const res = ys.map((y,i)=>y-(a*xs[i]+b));
+  const ym = sy/n, sst = ys.reduce((s,y)=>s+(y-ym)**2,0), ssr = res.reduce((s,r)=>s+r*r,0);
+  return {a:a,b:b,r2:1-ssr/sst,xs:xs,ys:ys,res:res,T:T};
+}
+function pintaCurva(){
+  const A = ajuste();
+  const loc = (A.ys[3]-A.ys[2])/(A.xs[3]-A.xs[2]);
+  $("#tb").innerHTML = "<tr><th>% m/v</th><th>ρ medida</th><th>ρ ajustada</th><th>resíduo</th></tr>" +
+    A.xs.map((x,i)=>"<tr><td>"+x+"</td><td>"+f4(A.ys[i])+"</td><td>"+f4(A.a*x+A.b)+
+      "</td><td>"+(A.res[i]>=0?"+":"")+A.res[i].toExponential(1).replace(".",",")+"</td></tr>").join("");
+  $("#s2").innerHTML =
+    "ajuste dos 4 pontos a " + f2(A.T) + " °C\n" +
+    "ρ = <b>" + A.a.toFixed(6).replace(".",",") + "</b>·C + <b>" + A.b.toFixed(5).replace(".",",") + "</b>\n" +
+    "R² = <b>" + A.r2.toFixed(6).replace(".",",") + "</b>\n" +
+    "os resíduos ALTERNAM de sinal → há curvatura\n" +
+    "inclinação local 30→40 % = " + loc.toFixed(6).replace(".",",") +
+    "  ·  10→20 % = " + ((A.ys[1]-A.ys[0])/(A.xs[1]-A.xs[0])).toFixed(6).replace(".",",") +
+    "\nqueda de " + f2(100*(1-loc/((A.ys[1]-A.ys[0])/(A.xs[1]-A.xs[0])))) + " %: a curva é CÔNCAVA";
+  desenha(A);
+}
+function desenha(A){
+  const c = $("#cv"), g = c.getContext("2d");
+  g.clearRect(0,0,c.width,c.height);
+  const L=54,R=c.width-14,Ty=16,By=c.height-30;
+  const X = (x)=>L+(x-0)/46*(R-L), Y=(y)=>By-(y-0.99)/(1.18-0.99)*(By-Ty);
+  g.strokeStyle="#f5f2e8"; g.lineWidth=1.6; g.beginPath();
+  g.moveTo(L,By); g.lineTo(R,By); g.moveTo(L,By); g.lineTo(L,Ty); g.stroke();
+  g.fillStyle="#7fd4e8"; g.font="12px DejaVu Sans";
+  g.fillText("C / % (m/v)", (L+R)/2-30, By+20);
+  g.fillText("ρ / g·cm⁻³", 6, Ty+8);
+  for(let x=0;x<=40;x+=10){ g.fillStyle="#f5f2e8"; g.fillText(String(x), X(x)-4, By+14); }
+  for(let y=1.00;y<=1.17;y+=0.03){ g.fillStyle="#f5f2e8";
+    g.fillText(y.toFixed(2).replace(".",","), 8, Y(y)+4); }
+  g.strokeStyle="#a5d6a7"; g.setLineDash([7,4]); g.beginPath();
+  g.moveTo(X(0),Y(A.b)); g.lineTo(X(46),Y(A.b+A.a*46)); g.stroke(); g.setLineDash([]);
+  A.xs.forEach((x,i)=>{ g.fillStyle="#ffe97a"; g.beginPath();
+    g.arc(X(x),Y(A.ys[i]),5,0,7); g.fill(); g.strokeStyle="#16201b"; g.stroke(); });
+  const rd = +$("#esp").value, cd = Math.max(0,(rd-A.b)/A.a);
+  g.strokeStyle="#e8a0d8"; g.setLineDash([5,4]); g.beginPath();
+  g.moveTo(X(cd),Y(rd)); g.lineTo(X(cd),By); g.moveTo(L,Y(rd)); g.lineTo(X(cd),Y(rd));
+  g.stroke(); g.setLineDash([]); g.fillStyle="#e8a0d8"; g.beginPath();
+  g.arc(X(cd),Y(rd),6,0,7); g.fill();
+}
+function leitura(){
+  const A = ajuste();
+  let rd = +$("#esp").value;
+  const rhoLiq = rd;
+  if(!$("#deg").checked) rd = rd + 0.0018;        // modelo declarado do gás dissolvido
+  const C = (rd - A.b)/A.a;
+  $("#lbrho").textContent = f5(+$("#esp").value);
+  $("#s3").innerHTML =
+    "ρ lida da amostra = " + f5(rhoLiq) + " g·cm⁻³" + (($("#deg").checked)?"":"  (COM gás)") + "\n" +
+    "C = (ρ − b)/a = <b>" + f2(C) + " % (m/v)</b>\n" +
+    "rótulo da Coca-Cola = 10,6 g/100 mL\n" +
+    "desvio sobre o rótulo = <b>" + (C-10.6>=0?"+":"") + f2(100*(C-10.6)/10.6) + " %</b>\n" +
+    "excesso = " + f2(C-10.6) + " g/100 mL (sólidos não-açúcar: caramelo, ácidos, cafeína, sais)";
+  desenha(A);
+}
+function pintaDens(){
+  $("#s5").innerHTML =
+    "DENSÍMETRO × PICNÔMETRO (mesmo líquido)\n" +
+    "picnômetro de 10 mL   →  u(ρ)/ρ = <b>0,116 %</b> (usa a balança)\n" +
+    "densímetro, 1 divisão = 0,005 g·cm⁻³  →  <b>0,48 %</b> (leitura DIRETA)\n" +
+    "razão = <b>4,1×</b> menos preciso — e ainda assim o mais usado, porque lê direto (L491-494).";
+  $("#s6").innerHTML =
+    "DEPENDÊNCIA TÉRMICA (o termo SISTEMÁTICO, que o orçamento NÃO contém)\n" +
+    "ρ(H₂O,T) cai " + f5(TAB1[20]-TAB1[21]) + " g·cm⁻³ por °C perto de 20 °C\n" +
+    "sensibilidade da amostra: água 0,020 %/°C · sacarose 40 % 0,035 %/°C · etanol 80 % 0,12 %/°C\n" +
+    "no etanol, 1 °C pesa MAIS que o orçamento inteiro — e por isso a temperatura se DECLARA " +
+    "em cada medida, não se propaga.";
+}
+
+/* ───────── auto-teste ───────── */
+function autoteste(){
+  CASOS.length = 0;
+  caso("V real a 20 °C ≈ 9,9980 cm³", Math.abs(V_REAL-9.9980)<0.001, f4(V_REAL));
+  caso("Tabela 1 decresce de 10 a 29 °C",
+       Object.keys(TAB1).every((t,i,a)=> i==0 || TAB1[t] < TAB1[a[i-1]]));
+  caso("a 4 °C a água é mais densa que a 20 °C (quadro lateral)", 0.999975 > TAB1[20]);
+  // água sem erro: ρ medida = ρ(H₂O,T)
+  const rhoAgua = M_H2O / V_REAL;
+  caso("água a 20 °C: ρ medida = ρ(H₂O,20 °C)", Math.abs(rhoAgua-TAB1[20])<1e-9, f5(rhoAgua));
+  // gota externa AUMENTA a densidade (sistemático positivo)
+  const liq = Object.assign({}, LIQ);
+  const m0 = V_REAL*LIQ.sac40.rho, m1 = m0+0.15;
+  caso("gota externa (+0,15 g) AUMENTA ρ medida", m1/V_REAL > m0/V_REAL);
+  caso("a gota vale +1,3 % em ρ — muito acima do orçamento (0,12 %)",
+       Math.abs(100*(0.15/V_REAL)/LIQ.sac40.rho - 1.30) < 0.05);
+  // bolha de ar DIMINUI
+  caso("bolha de ar (0,10 mL) DIMINUI ρ medida", (m0-0.10*LIQ.sac40.rho)/V_REAL < m0/V_REAL);
+  // a curva da sacarose é crescente e côncava
+  const ys = SERIE.map(k=>LIQ[k].rho);
+  caso("ρ(sacarose) cresce com a concentração", ys.every((y,i)=> i==0 || y>ys[i-1]));
+  const loc = [(ys[1]-ys[0])/10, (ys[2]-ys[1])/10, (ys[3]-ys[2])/10];
+  caso("a inclinação local CAI (curva côncava)", loc[0]>loc[2] && loc[2]>0, loc.map(v=>v.toFixed(6)).join(" > "));
+  // ajuste
+  const xs=SERIE.map(k=>C_MV[k]);
+  const n=4, sx=xs.reduce((a,b)=>a+b,0), sy=ys.reduce((a,b)=>a+b,0),
+        sxx=xs.reduce((a,b)=>a+b*b,0), sxy=xs.reduce((a,b,i)=>a+b*ys[i],0);
+  const a=(n*sxy-sx*sy)/(n*sxx-sx*sx), b=(sy-a*sx)/n;
+  const ym=sy/n, sst=ys.reduce((s,y)=>s+(y-ym)**2,0),
+        ssr=ys.reduce((s,y,i)=>s+(y-(a*xs[i]+b))**2,0), r2=1-ssr/sst;
+  caso("R² da calibração > 0,999", r2>0.999, r2.toFixed(6));
+  caso("a inclinação ajustada fica entre 0,003 e 0,0045", a>0.003 && a<0.0045, a.toFixed(6));
+  // leitura da Coca-Cola
+  const cDeg = (1.04221-b)/a, cGas = (1.04221+0.0018-b)/a;
+  caso("Coca degaseificada lê entre 10 e 11,5 % (m/v)", cDeg>10 && cDeg<11.5, f2(cDeg));
+  caso("com gás, a leitura é MAIOR (o CO₂ também pesa)", cGas>cDeg, f2(cGas));
+  caso("o desvio sobre o rótulo (10,6) fica entre +1 e +5 %",
+       100*(cDeg-10.6)/10.6>1 && 100*(cDeg-10.6)/10.6<5, f2(100*(cDeg-10.6)/10.6));
+  // orçamento de incerteza
+  const uM=Math.sqrt(2)*(0.01/Math.sqrt(3))/M_H2O, uVrel=0.0825e-2;
+  caso("massa e volume EMPATAM no orçamento (razão < 1,1)", Math.abs(uM/uVrel-1)<0.1,
+       (uM/uVrel).toFixed(3));
+  caso("densímetro (0,005 g·cm⁻³) é menos preciso que o picnômetro",
+       0.005/1.05 > 0.001162);
+  caso("Tabela 2 do manual: 80 % a 20 °C NÃO é o menor valor (o defeito)",
+       0.89334 > 0.89113);
+  const ok = CASOS.filter(c=>c.ok).length;
+  window.__casos = CASOS; window.__autoteste = (ok === CASOS.length);
+  $("#at").className = "out " + (window.__autoteste ? "ok" : "warn");
+  $("#at").textContent = "AUTO-TESTE EMBUTIDO: " + ok + "/" + CASOS.length + " casos aprovados\n" +
+    CASOS.map(c=>(c.ok?"✔ ":"✘ ")+c.nome+(c.det?"  ("+c.det+")":"")).join("\n");
+}
+
+["#T","#liq","#gota","#bolha","#cal","#esp","#deg"].forEach(s=>
+  $(s).addEventListener("input", ()=>{ pinta(); pintaCurva(); leitura(); }));
+pinta(); pintaCurva(); leitura(); pintaDens(); autoteste();
+window.__pronto = true;
+</script></body></html>

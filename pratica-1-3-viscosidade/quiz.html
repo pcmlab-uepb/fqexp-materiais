@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prática 1.3 — Determinação do Coeficiente de Viscosidade pelo Viscosímetro de Ostwald</title>
+<style>
+  :root{
+    --chalk:#f5f2e8; --yellow:#ffe97a; --pink:#e8a0d8; --cyan:#7fd4e8;
+    --green:#a5d6a7; --orange:#ffb74d; --ink:#16201b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    background:linear-gradient(160deg,#2f6e4f 0%,#265c43 55%,#1f5540 100%);
+    color:var(--chalk);
+    font-family:"DejaVu Sans","Verdana","Segoe UI",system-ui,sans-serif;
+    padding:28px 20px 60px; line-height:1.5;
+  }
+  .wrap{max-width:940px;margin:0 auto}
+  header{margin-bottom:22px}
+  .disc{font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.5rem;margin:.25rem 0 .5rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.9rem;color:rgba(245,242,232,.72)}
+  .bar{height:8px;border-radius:6px;background:rgba(22,32,27,.45);margin-top:16px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--cyan);transition:width .35s ease}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;
+       font-size:.86rem;color:rgba(245,242,232,.8);flex-wrap:wrap}
+  .toggle{cursor:pointer;border:2px solid rgba(245,242,232,.5);background:transparent;color:var(--chalk);
+          border-radius:999px;padding:6px 14px;font:inherit;font-size:.82rem}
+  .toggle[aria-pressed="true"]{background:var(--yellow);color:var(--ink);border-color:var(--yellow);font-weight:700}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.22);border-radius:16px;
+        padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+  .qnum{font-size:.82rem;color:var(--cyan);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+  .stem{font-size:1.18rem;font-weight:700;margin-bottom:20px}
+  .opts{display:grid;gap:11px}
+  button.opt{display:flex;gap:14px;align-items:flex-start;text-align:left;width:100%;
+    background:rgba(245,242,232,.06);border:2px solid rgba(245,242,232,.28);color:var(--chalk);
+    border-radius:12px;padding:14px 16px;font:inherit;font-size:1rem;cursor:pointer;transition:.15s}
+  button.opt:hover:not(:disabled){background:rgba(245,242,232,.14);border-color:var(--chalk)}
+  button.opt:disabled{cursor:default}
+  button.opt .k{font-weight:700;color:var(--cyan);min-width:1.2em}
+  button.opt.ok{background:rgba(165,214,167,.22);border-color:var(--green)}
+  button.opt.ok .k{color:var(--green)}
+  button.opt.bad{background:rgba(232,160,216,.18);border-color:var(--pink)}
+  button.opt.bad .k{color:var(--pink)}
+  button.opt.dim{opacity:.45}
+  .fb{margin-top:18px;border-left:5px solid var(--cyan);border-radius:8px;padding:14px 16px;
+      background:rgba(22,32,27,.42);font-size:.97rem}
+  .fb.good{border-left-color:var(--green)}
+  .fb.bad{border-left-color:var(--pink)}
+  .fb b{color:var(--yellow)}
+  .fb.good b{color:var(--green)}
+  .fb.bad b{color:var(--pink)}
+  .nav{margin-top:20px;display:flex;justify-content:flex-end;gap:12px}
+  .go{background:var(--cyan);color:var(--ink);border:0;border-radius:10px;padding:12px 26px;
+      font:inherit;font-weight:700;cursor:pointer}
+  .go:disabled{opacity:.4;cursor:not-allowed}
+  .count{font-variant-numeric:tabular-nums;color:var(--yellow);font-weight:700}
+  .done{text-align:center}
+  .score{font-size:3.2rem;font-weight:700;color:var(--cyan);text-shadow:0 3px 0 rgba(22,32,27,.5)}
+  .score small{font-size:1.2rem;color:rgba(245,242,232,.7)}
+  .verdict{margin:10px 0 22px;font-size:1.1rem;color:var(--yellow)}
+  .rev{text-align:left;background:rgba(22,32,27,.3);border:2px solid rgba(245,242,232,.18);
+       border-radius:14px;padding:18px;margin-top:8px}
+  .rev h3{font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan);margin-bottom:12px}
+  .rev li{list-style:none;padding:10px 0;border-bottom:1px solid rgba(245,242,232,.12);font-size:.94rem}
+  .rev li:last-child{border-bottom:0}
+  .rev .tag{font-weight:700}
+  .rev .tag.ok{color:var(--green)}
+  .rev .tag.no{color:var(--pink)}
+  .hint{font-size:.82rem;color:rgba(245,242,232,.6);margin-top:14px;text-align:center}
+</style></head><body>
+<div class="wrap">
+  <header>
+    <div class="disc">Físico-Química Experimental</div>
+    <h1>Prática 1.3 — Determinação do Coeficiente de Viscosidade pelo Viscosímetro de Ostwald</h1>
+    <div class="meta">Princípio 12 (erro deliberado): cada questão tem um distrator que representa o erro típico do aluno, com feedback explicando por que está errado.</div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="row">
+      <span>Questão <b id="qi">1</b> de <b id="qn">0</b> · acertos: <b id="hits">0</b></span>
+      <button class="toggle" id="ta" aria-pressed="false">Modo aula (25s p/ revelar)</button>
+    </div>
+  </header>
+  <main id="main"></main>
+  <div class="hint">Atalhos: 1–4 respondem · Enter avança · R reinicia</div>
+</div>
+<script>
+const QUIZ = {"schema": "maic-like/quiz@1", "discipline": "Físico-Química Experimental", "lesson": "Prática 1.3 — Determinação do Coeficiente de Viscosidade pelo Viscosímetro de Ostwald", "language": "pt-BR", "principle": "Princípio 12 (erro deliberado): cada questão tem um distrator que representa o erro típico do aluno, com feedback explicando por que está errado.", "questions": [{"id": "q1", "scene": "cena_4", "stem": "No viscosímetro de Ostwald, o que o tempo de escoamento mede DIRETAMENTE?", "options": [{"key": "A", "text": "A viscosidade dividida pela densidade do líquido (η/ρ)", "correct": true, "feedback": "Correto. Da lei de Poiseuille, o tempo é proporcional à viscosidade cinemática η/ρ — não à viscosidade absoluta. É por isso que a densidade aparece na equação da prática."}, {"key": "B", "text": "A viscosidade absoluta do líquido (η)", "correct": false, "feedback": "Erro típico: achar que o cronômetro entrega a viscosidade direto. Se fosse assim, a equação da prática não precisaria da densidade — e ela precisa. O Ostwald mede uma razão."}, {"key": "C", "text": "A densidade do líquido (ρ)", "correct": false, "feedback": "A densidade entra multiplicando o tempo, não sozinha. Quem mede densidade é o picnômetro, na Prática 1 — aqui ela é um dado de entrada."}, {"key": "D", "text": "A tensão superficial do líquido", "correct": false, "feedback": "Tensão superficial é outra propriedade; ela atua nas interfaces e não governa o escoamento em regime laminar dentro do capilar."}]}, {"id": "q2", "scene": "cena_5", "stem": "Por que a pressão hidrostática P desaparece na equação da viscosidade relativa?", "options": [{"key": "A", "text": "Porque r, L, V, h e g são os mesmos nos dois líquidos e se cancelam ao dividir uma equação pela outra", "correct": true, "feedback": "Correto. É exatamente a dedução da prática: no mesmo instrumento e com o mesmo volume, tudo o que é geométrico se cancela na razão, e sobra (ρ₁t₁)/(ρ₂t₂)."}, {"key": "B", "text": "Porque P é medida diretamente com um manômetro e depois descontada", "correct": false, "feedback": "Erro típico: procurar um instrumento que mede a pressão. Não há manômetro nesta prática — a própria estrutura de razão elimina P, sem medi-la."}, {"key": "C", "text": "Porque P é constante durante todo o escoamento", "correct": false, "feedback": "Ela NÃO é constante: a coluna de líquido cai enquanto o nível desce. O que salva o método é que ela varia 'sempre da mesma maneira' nos dois casos, e isso cancela na razão."}, {"key": "D", "text": "Porque a água e o líquido têm a mesma densidade", "correct": false, "feedback": "Erro que derruba a prática inteira: se as densidades fossem iguais, elas também se cancelariam e a equação não teria ρ. As densidades são DIFERENTES — é justamente por isso que ρ aparece no numerador e no denominador."}]}, {"id": "q3", "scene": "cena_6", "stem": "Qual é a unidade SI da viscosidade dinâmica e quanto vale 1 centipoise?", "options": [{"key": "A", "text": "pascal segundo (Pa·s); 1 cP = 1 mPa·s", "correct": true, "feedback": "Correto. O SI usa Pa·s; o CGS usa o poise, e o centipoise equivale a 1 mPa·s. A água a 20 °C vale praticamente 1 cP — a coincidência histórica que a prática aproveita."}, {"key": "B", "text": "poise (P); 1 cP = 1 Pa·s", "correct": false, "feedback": "Erro típico: misturar os dois sistemas. O poise é CGS, não SI. E 1 cP é 1 mPa·s — mil vezes menor que 1 Pa·s, não igual."}, {"key": "C", "text": "metro quadrado por segundo (m²/s); 1 cP = 1 cSt", "correct": false, "feedback": "Essa é a unidade da viscosidade CINEMÁTICA (ν = η/ρ), não da dinâmica. E 1 cP não equivale a 1 cSt: só valeria se ρ = 1 g/cm³ exatamente."}, {"key": "D", "text": "stokes (St); 1 cP = 1 P", "correct": false, "feedback": "O stokes é CGS de viscosidade cinemática. E 1 cP = 1/100 P, não 1 P — o prefixo centi não é decorativo."}]}, {"id": "q4", "scene": "cena_7", "stem": "Por que o volume precisa ser exatamente o mesmo (10 mL) em todas as determinações?", "options": [{"key": "A", "text": "Porque a altura da coluna define a pressão hidrostática; mudar o volume muda P e quebra o cancelamento", "correct": true, "feedback": "Correto. A pressão é P = ρgh, e h depende de quanto líquido está acima do capilar. Volume diferente significa coluna diferente, e a igualdade entre os dois líquidos deixa de valer."}, {"key": "B", "text": "Porque o capilar tem um volume interno fixo que não pode ser alterado", "correct": false, "feedback": "O capilar tem volume fixo, sim — mas é o volume de líquido COLOCADO no bulbo que define a altura da coluna. O erro é olhar para o lugar errado do instrumento."}, {"key": "C", "text": "Porque a densidade do líquido muda quando o volume muda", "correct": false, "feedback": "A densidade é uma propriedade intensiva: não depende de quanto líquido você põe no viscosímetro. Confundir intensivo com extensivo é o erro."}, {"key": "D", "text": "Porque o cronômetro só é válido para volumes de 10 mL", "correct": false, "feedback": "O cronômetro mede tempo, não volume. Não há calibração de volume no cronômetro."}]}, {"id": "q5", "scene": "cena_7", "stem": "A viscosidade da água cai cerca de 11 % quando a temperatura vai de 20 °C para 25 °C. Qual é a consequência prática para esta experiência?", "options": [{"key": "A", "text": "Um erro de 1 °C na temperatura produz cerca de 2 % de erro em η — o controle térmico é indispensável", "correct": true, "feedback": "Correto. A queda é quase exponencial: ~11 % em 5 graus significa ~2 % por grau. Um desvio de 2 °C já consome toda a margem de 5 % que separa um resultado excelente de um aceitável."}, {"key": "B", "text": "Como a água é a referência, o efeito da temperatura se cancela na razão", "correct": false, "feedback": "Erro conceitual grave. A razão cancela os termos GEOMÉTRICOS (r, L, V, h). A viscosidade da água a 20 °C não é a mesma a 25 °C — e é ela que você usa como referência. Comparar um medido a 25 °C com uma referência a 20 °C introduz erro sistemático."}, {"key": "C", "text": "A temperatura afeta a densidade e a viscosidade na mesma proporção", "correct": false, "feedback": "Não. Entre 20 e 30 °C a densidade da água varia cerca de 0,3 %, enquanto a viscosidade varia cerca de 21 %. São efeitos de ordens de grandeza diferentes — o efeito térmico é praticamente todo sobre η."}, {"key": "D", "text": "Só afeta as soluções concentradas de sacarose, porque são mais viscosas", "correct": false, "feedback": "Afeta todas. A água é o caso mais brando: as soluções concentradas caem ainda mais (a sacarose 40 % cai cerca de 29 % entre 20 e 30 °C)."}]}, {"id": "q6", "scene": "cena_8", "stem": "Numa determinação a 25 °C, a água escoou em 60,0 s e o etanol em 92,1 s. As densidades são 0,99705 e 0,78500 g/cm³. Qual é a viscosidade relativa do etanol em relação à água?", "options": [{"key": "A", "text": "1,21", "correct": true, "feedback": "Correto. (0,78500 × 92,1) / (0,99705 × 60,0) = 72,30 / 59,89 = 1,208. Multiplicando pela viscosidade da água a 25 °C (0,890 mPa·s) chega-se a 1,074 mPa·s — o valor tabelado para o etanol."}, {"key": "B", "text": "0,83", "correct": false, "feedback": "Erro típico: inverter a razão. 59,89/72,30 = 0,828. O líquido seria menos viscoso que a água — mas o etanol leva 92,1 s contra 60,0 s da água, então ele é MAIS viscoso. O tempo maior tem de dar razão maior."}, {"key": "C", "text": "12,1", "correct": false, "feedback": "Erro de ordem de grandeza: a razão entre densidades é próxima de 1 (0,79 vs 1,00) e a razão entre tempos é 1,54. O produto não passa de ~1,2. Viscosidade relativa próxima de 12 exigiria um líquido quase sólido."}, {"key": "D", "text": "1,54", "correct": false, "feedback": "Esse é só o quociente dos TEMPOS (92,1/60,0). Falta a razão das DENSIDADES (0,785/0,998 = 0,786), que reduz o resultado de 1,54 para 1,21. Esquecer a densidade é o erro que a própria apostila usa como critério de correção."}]}]};
+const SECS = 25;
+let i = 0, hits = 0, log = [], answered = false, timer = null, left = SECS, classMode = false;
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function startTimer(){
+  clearInterval(timer);
+  if(!classMode || answered) { return; }
+  left = SECS;
+  timer = setInterval(() => {
+    left--;
+    const el = document.getElementById('cd');
+    if(el) el.textContent = left;
+    if(left <= 0){ clearInterval(timer); revealByTimer(); }
+  }, 1000);
+}
+
+/* ── Embaralhamento das alternativas (correção de 13/out/2026) ────────────────
+   Defeito encontrado ao gerar o gabarito: a alternativa CORRETA estava na posição
+   A nas 6 questões, e a ordem do JSON era a ordem exibida — o aluno percebe o
+   padrão e acerta sem saber. Agora a ordem é sorteada a cada exibição
+   (Fisher-Yates) e as letras A–D são reatribuídas na ordem da tela, de modo que o
+   atalho de teclado 1–4 continue válido. O feedback de cada distrator acompanha a
+   alternativa, não a posição. */
+function embaralha(arr){
+  const a = arr.slice();
+  for(let j = a.length - 1; j > 0; j--){
+    const r = Math.floor(Math.random() * (j + 1));
+    const t = a[j]; a[j] = a[r]; a[r] = t;
+  }
+  return a;
+}
+const LETRAS = 'ABCDEFGH';
+let atual = [];                    // opções na ordem da tela, com a letra exibida
+
+function ordena(q){
+  atual = embaralha(q.options).map((o, n) => ({
+    key: LETRAS[n], text: o.text, correct: o.correct, feedback: o.feedback
+  }));
+  return atual;
+}
+
+function revealByTimer(){
+  if(answered) return;
+  answered = true;
+  atual.forEach(o => {
+    const b = document.querySelector('button.opt[data-k="'+o.key+'"]');
+    if(b){ b.disabled = true; if(o.correct) b.classList.add('ok'); else b.classList.add('dim'); }
+  });
+  showFeedback(null, atual.find(o => o.correct));
+}
+
+function render(){
+  if(i >= QUIZ.questions.length) return finish();
+  answered = false;
+  const q = QUIZ.questions[i];
+  const opts = ordena(q);                    // sorteia a ordem a cada exibição
+  $('#qi').textContent = i + 1;
+  $('#hits').textContent = hits;
+  $('#bar').style.width = (i / QUIZ.questions.length * 100) + '%';
+  $('#main').innerHTML =
+    '<div class="card">' +
+      '<div class="qnum">Questão ' + (i+1) + '</div>' +
+      '<div class="stem">' + esc(q.stem) + '</div>' +
+      '<div class="opts">' + opts.map(o =>
+        '<button class="opt" data-k="' + o.key + '"><span class="k">' + o.key +
+        '</span><span>' + esc(o.text) + '</span></button>').join('') + '</div>' +
+      '<div id="fb"></div>' +
+      '<div class="nav"><button class="go" id="next" disabled>Próxima →</button></div>' +
+    '</div>';
+  document.querySelectorAll('button.opt').forEach(b =>
+    b.addEventListener('click', () => answer(b.dataset.k)));
+  $('#next').addEventListener('click', () => { i++; render(); });
+  if(classMode){
+    const f = document.createElement('div');
+    f.className = 'hint';
+    f.innerHTML = 'Revelando em <span class="count" id="cd">' + SECS + '</span>s';
+    $('#main').querySelector('.card').appendChild(f);
+    startTimer();
+  }
+}
+
+function answer(k){
+  if(answered) return;
+  answered = true; clearInterval(timer);
+  const q = QUIZ.questions[i];
+  const picked = atual.find(o => o.key === k);
+  const right = atual.find(o => o.correct);
+  atual.forEach(o => {
+    const b = document.querySelector('button.opt[data-k="'+o.key+'"]');
+    b.disabled = true;
+    if(o.correct) b.classList.add('ok');
+    else if(o.key === k) b.classList.add('bad');
+    else b.classList.add('dim');
+  });
+  if(picked.correct) hits++;
+  log.push({stem: q.stem, picked: k, right: right.key, ok: picked.correct});
+  $('#hits').textContent = hits;
+  showFeedback(picked, right);
+  $('#next').disabled = false;
+  $('#next').focus();
+}
+
+function showFeedback(picked, right){
+  const cls = picked ? (picked.correct ? 'good' : 'bad') : 'bad';
+  const head = picked
+    ? (picked.correct ? 'Correto — alternativa ' + picked.key : 'Errado — você marcou ' + picked.key + '; a correta é ' + right.key)
+    : 'Tempo esgotado — a correta é ' + right.key;
+  const body = picked ? picked.feedback : right.feedback;
+  const fb = $('#fb');
+  fb.innerHTML = '<div class="fb ' + cls + '"><b>' + head + '.</b> ' + esc(body) + '</div>';
+  const n = $('#next'); if(n) n.disabled = false;
+}
+
+function finish(){
+  clearInterval(timer);
+  $('#bar').style.width = '100%';
+  const pct = Math.round(hits / QUIZ.questions.length * 100);
+  const verdict = pct === 100 ? 'Domínio completo do conceito.'
+    : pct >= 67 ? 'Bom — revise as questões erradas antes da prática.'
+    : 'Vale reler a Parte 4 e a Parte 5 antes de vir ao laboratório.';
+  $('#main').innerHTML =
+    '<div class="card done">' +
+      '<div class="score">' + hits + '<small>/' + QUIZ.questions.length + '</small></div>' +
+      '<div class="verdict">' + verdict + '</div>' +
+      '<div class="rev"><h3>Revisão</h3><ul>' +
+        log.map((l, n) => '<li><span class="tag ' + (l.ok ? 'ok' : 'no') + '">' +
+          (l.ok ? '✔' : '✘') + '</span> <b>Q' + (n+1) + '.</b> ' + esc(l.stem) +
+          (l.ok ? '' : ' <em>(marcou ' + l.picked + '; correta: ' + l.right + ')</em>') + '</li>').join('') +
+      '</ul></div>' +
+      '<div class="nav" style="justify-content:center"><button class="go" id="again">Refazer</button></div>' +
+    '</div>';
+  $('#again').addEventListener('click', () => { i = 0; hits = 0; log = []; render(); });
+}
+
+$('#ta').addEventListener('click', e => {
+  classMode = !classMode;
+  e.target.setAttribute('aria-pressed', String(classMode));
+  render();
+});
+$('#qn').textContent = QUIZ.questions.length;
+document.addEventListener('keydown', e => {
+  if(e.key >= '1' && e.key <= '4'){
+    const k = ['A','B','C','D'][Number(e.key) - 1];
+    if(!answered && document.querySelector('button.opt[data-k="'+k+'"]')) answer(k);
+  }
+  if(e.key === 'Enter'){ const n = document.getElementById('next'); if(n && !n.disabled) n.click(); }
+  if(e.key.toLowerCase() === 'r'){ i = 0; hits = 0; log = []; render(); }
+});
+render();
+</script></body></html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulação — Equilíbrio Heterogêneo (Prática 1.5)</title>
+<style>
+  :root{--chalk:#f5f2e8;--yellow:#ffe97a;--pink:#e8a0d8;--cyan:#7fd4e8;--green:#a5d6a7;
+        --orange:#ffb74d;--ink:#16201b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:linear-gradient(160deg,#2f6e4f,#265c43 55%,#1f5540);color:var(--chalk);
+       font-family:"DejaVu Sans","Verdana",system-ui,sans-serif;line-height:1.5;padding:26px 18px 70px}
+  .wrap{max-width:1080px;margin:0 auto}
+  header{margin-bottom:20px}
+  .disc{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.45rem;margin:.25rem 0 .4rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.88rem;color:rgba(245,242,232,.72)}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.2);border-radius:16px;
+        padding:20px;margin-top:18px}
+  .card h2{font-size:1.06rem;color:var(--cyan);margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  canvas{background:rgba(15,40,30,.55);border-radius:12px;border:1px solid rgba(245,242,232,.18);
+         max-width:100%;touch-action:none;cursor:crosshair}
+  label{font-size:.84rem;color:rgba(245,242,232,.82);display:block;margin-top:10px}
+  input[type=number]{width:120px;background:rgba(245,242,232,.08);border:1.5px solid rgba(245,242,232,.3);
+        color:var(--chalk);border-radius:8px;padding:5px 8px;font:inherit;font-size:.9rem}
+  input[type=range]{width:100%;accent-color:#7fd4e8;margin-top:4px}
+  .out{font-size:.93rem;background:rgba(22,32,27,.42);border-left:5px solid var(--cyan);
+       border-radius:8px;padding:11px 13px;margin-top:12px;white-space:pre-wrap}
+  .out b{color:var(--yellow)}
+  .ok{color:var(--green)} .no{color:var(--pink)}
+  table{width:100%;border-collapse:collapse;font-size:.86rem;margin-top:10px}
+  th,td{padding:5px 7px;border-bottom:1px solid rgba(245,242,232,.14);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--yellow);font-weight:700}
+  .hint{font-size:.8rem;color:rgba(245,242,232,.62);margin-top:10px}
+  .k{color:var(--cyan);font-weight:700}
+  pre{font-size:.82rem;background:rgba(22,32,27,.5);border-radius:8px;padding:11px;overflow:auto;
+      white-space:pre-wrap}
+</style></head><body>
+<div class="wrap">
+  <header>
+    <div class="disc">Físico-Química Experimental · 2026.2 · UEPB/PCMLab</div>
+    <h1>Simulação — Prática 1.5: equilíbrio heterogêneo</h1>
+    <div class="meta">Sistema ternário (Exp 08) e termodinâmica da solubilidade do KNO₃ (Exp 09).
+      Fonte de procedimento: Manual20202 — Exp 08 (l. 3015–3288) e Exp 09 (l. 3290–3463).
+      Os modelos desta página são <b>didáticos e declarados</b>: não são dados de bancada.</div>
+  </header>
+
+  <div class="card">
+    <h2>1 · Diagrama ternário — onde o seu ponto cai</h2>
+    <div class="grid">
+      <canvas id="cv" width="620" height="580"></canvas>
+      <div>
+        <label>Temperatura da bancada — <span class="k" id="tv">25 °C</span></label>
+        <input type="range" id="T" min="5" max="45" step="1" value="25">
+        <div class="out" id="s1"></div>
+        <div class="hint">Clique no triângulo para escolher a composição global.
+          A e B são completamente miscíveis; A e C também; <b>B e C são parcialmente
+          miscíveis</b> — B = tolueno (substitui o benzeno por recomendação do manual),
+          C = água, A = etanol. Aqueça: a área difásica encolhe.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Kps e ΔG° — com e sem atividade</h2>
+    <div>
+      <label>Temperatura / °C <input type="number" id="t2" step="0.1" value="25.0"></label>
+      <label>Solubilidade s / (mol·L⁻¹) <input type="number" id="s2" step="0.01" value="3.26"></label>
+      <label>Molalidade m / (mol·kg⁻¹) <input type="number" id="m2" step="0.01" value="3.79"></label>
+      <label>γ± (coeficiente de atividade médio) <input type="number" id="g2" step="0.001" value="0.234"></label>
+    </div>
+    <div class="out" id="s2out"></div>
+    <div class="hint">Atenção à ESCALA: o γ± tabelado é por MOLALIDADE, então a atividade usa
+      <b>m</b>, não <b>s</b>: a± = (m/m°)·γ±. Para o KNO₃ saturado a 25 °C, γ± ≈ 0,234
+      (Hamer &amp; Wu, <i>J. Phys. Chem. Ref. Data</i> <b>1</b>, 1047 (1972), Tabela 34 — NIST).
+      Ponha γ± = 1 para reproduzir a hipótese 1 do manual (atividades ignoradas).</div>
+  </div>
+
+  <div class="card">
+    <h2>3 · van't Hoff — de cinco pontos à entalpia</h2>
+    <div class="grid">
+      <div>
+        <table id="tb"><thead><tr><th>#</th><th>t / °C</th><th>s / (mol·L⁻¹)</th></tr></thead>
+          <tbody></tbody></table>
+        <div class="hint" style="margin-top:8px">Valores iniciais = exemplo ilustrativo da aula
+          (20 g de KNO₃ + 5 adições de 5 mL). Troque à vontade: o ajuste é recalculado.</div>
+      </div>
+      <div>
+        <canvas id="cv2" width="560" height="420"></canvas>
+        <div class="out" id="s3"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>4 · Autoteste de física (roda sozinho)</h2>
+    <pre id="st">—</pre>
+  </div>
+
+  <div class="card">
+    <h2>Conferência dos números de referência</h2>
+    <div class="out" id="ref"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const R = 8.314462618;                      // J·mol⁻¹·K⁻¹ (CODATA)
+const M = { A: 46.06844, B: 92.1405, C: 18.01528 };   // etanol, tolueno, água
+
+/* ───────────────────────── modelo didático da binodal ─────────────────────────
+   Tabela de linhas de amarração em FRAÇÃO MOLAR (A = etanol, B = tolueno, C = água).
+   As duas pontas de cada linha somam 1 e as linhas NÃO são paralelas entre si —
+   é o que desloca o ponto crítico k para um dos lados, exatamente como o manual
+   descreve (l. 3115). Modelo declarado: serve para ENSINAR a leitura do diagrama. */
+const TIE = [
+  { b: [0.000, 0.970, 0.030], c: [0.000, 0.030, 0.970] },
+  { b: [0.080, 0.880, 0.040], c: [0.020, 0.020, 0.960] },
+  { b: [0.170, 0.760, 0.070], c: [0.055, 0.025, 0.920] },
+  { b: [0.260, 0.630, 0.110], c: [0.105, 0.035, 0.860] },
+  { b: [0.350, 0.480, 0.170], c: [0.180, 0.040, 0.780] },
+  { b: [0.420, 0.330, 0.250], c: [0.420, 0.330, 0.250] }     // k: as duas coincidem
+];
+const K_PONTO = 5;
+
+/* escala o teor de A por f(T): mais quente = mais miscibilidade = domo menor */
+function fatorT(T) { return Math.max(0.55, Math.min(1.25, 1 - 0.025 * (T - 25))); }
+function escala(p, f) {
+  const xA = p[0] * f, resto = 1 - xA, base = 1 - p[0];
+  return base <= 0 ? [xA, 0, 1 - xA] : [xA, p[1] * resto / base, p[2] * resto / base];
+}
+function binodal(T) {
+  const f = fatorT(T);
+  return TIE.map((t, i) => ({ b: escala(t.b, f), c: escala(t.c, f), i }));
+}
+
+/* geometria do triângulo no canvas */
+let cv, ctx, V = {};
+function geom() {
+  const w = cv.width, h = cv.height, cx = w / 2, raio = 280, topo = 40, base = 520;
+  V = { A: [cx, topo], B: [cx - raio, base], C: [cx + raio, base], h, w };
+}
+function pix(p) {          // (xA,xB,xC) -> pixel
+  return [p[0] * V.A[0] + p[1] * V.B[0] + p[2] * V.C[0],
+          p[0] * V.A[1] + p[1] * V.B[1] + p[2] * V.C[1]];
+}
+function composicao(px, py) {   // pixel -> (xA,xB,xC) por coordenadas baricêntricas
+  const [x1, y1] = V.A, [x2, y2] = V.B, [x3, y3] = V.C;
+  const d = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+  const a = ((y2 - y3) * (px - x3) + (x3 - x2) * (py - y3)) / d;
+  const b = ((y3 - y1) * (px - x3) + (x1 - x3) * (py - y3)) / d;
+  return [a, b, 1 - a - b];
+}
+function dentroTri(p) { return p[0] >= -1e-9 && p[1] >= -1e-9 && p[2] >= -1e-9; }
+
+/* ponto dentro do polígono fechado b0..bk..c0 (ray casting) */
+function dentroDomo(p, T) {
+  const bn = binodal(T);
+  const caminho = bn.map(o => o.b).concat(bn.slice(0, -1).reverse().map(o => o.c));
+  const px = pix(p);
+  let dentro = false;
+  for (let i = 0, j = caminho.length - 1; i < caminho.length; j = i++) {
+    const xi = pix(caminho[i])[0], yi = pix(caminho[i])[1];
+    const xj = pix(caminho[j])[0], yj = pix(caminho[j])[1];
+    if (((yi > px[1]) !== (yj > px[1])) &&
+        (px[0] < (xj - xi) * (px[1] - yi) / (yj - yi) + xi)) dentro = !dentro;
+  }
+  return dentro;
+}
+function linhaDoPonto(p, T) {        // linha de amarração mais próxima do ponto
+  const bn = binodal(T).filter(o => !(o.i === K_PONTO));
+  const t = Math.max(0, Math.min(1, p[0] / Math.max(1e-9, TIE[K_PONTO].b[0] * fatorT(T))));
+  const i = Math.min(bn.length - 1, Math.round(t * (bn.length - 1)));
+  return bn[i];
+}
+function massa(p) {                  // fração molar -> % (m/m)
+  const mA = p[0] * M.A, mB = p[1] * M.B, mC = p[2] * M.C, tot = mA + mB + mC;
+  return { A: 100 * mA / tot, B: 100 * mB / tot, C: 100 * mC / tot };
+}
+const f2 = (x) => x.toFixed(2).replace(".", ",");
+const f3 = (x) => x.toFixed(3).replace(".", ",");
+const f4 = (x) => x.toFixed(4).replace(".", ",");
+
+let PONTO = [0.20, 0.45, 0.35];
+function desenha() {
+  const T = +$("#T").value;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  // lados
+  ctx.strokeStyle = "#f5f2e8"; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(V.A[0], V.A[1]); ctx.lineTo(V.B[0], V.B[1]);
+  ctx.lineTo(V.C[0], V.C[1]); ctx.closePath(); ctx.stroke();
+  // domo (binodal)
+  const bn = binodal(T);
+  const caminho = bn.map(o => o.b).concat(bn.slice(0, -1).reverse().map(o => o.c));
+  ctx.beginPath();
+  caminho.forEach((p, k) => { const [x, y] = pix(p); k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255,233,122,.13)"; ctx.fill();
+  ctx.strokeStyle = "#ffe97a"; ctx.lineWidth = 3; ctx.stroke();
+  // linhas de amarração
+  ctx.strokeStyle = "rgba(232,160,216,.75)"; ctx.lineWidth = 1.6;
+  ctx.setLineDash([6, 5]);
+  bn.forEach(o => { if (o.i === K_PONTO) return;
+    const [x1, y1] = pix(o.b), [x2, y2] = pix(o.c);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); });
+  ctx.setLineDash([]);
+  // ponto crítico k
+  const [kx, ky] = pix(bn[K_PONTO].b);
+  ctx.fillStyle = "#ffe97a"; ctx.beginPath(); ctx.arc(kx, ky, 7, 0, 7); ctx.fill();
+  ctx.fillStyle = "#ffe97a"; ctx.font = "bold 20px 'DejaVu Sans'"; ctx.fillText("k", kx + 10, ky - 6);
+  // rótulos dos vértices
+  ctx.font = "bold 18px 'DejaVu Sans'";
+  ctx.fillStyle = "#7fd4e8"; ctx.fillText("A · etanol", V.A[0] - 170, V.A[1] + 20);
+  ctx.fillStyle = "#ffb74d"; ctx.fillText("B · tolueno", V.B[0] + 6, V.B[1] + 34);
+  ctx.fillStyle = "#a5d6a7"; ctx.fillText("C · água", V.C[0] - 74, V.C[1] + 34);
+  // o ponto do usuário
+  const [px, py] = pix(PONTO);
+  const duas = dentroDomo(PONTO, T);
+  ctx.fillStyle = duas ? "#e8a0d8" : "#7fd4e8";
+  ctx.beginPath(); ctx.arc(px, py, 8, 0, 7); ctx.fill();
+  ctx.strokeStyle = "#16201b"; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.font = "bold 19px 'DejaVu Sans'"; ctx.fillStyle = "#f5f2e8";
+  ctx.fillText(duas ? "2 fases" : "1 fase", px + 14, py - 6);
+  // saída de texto
+  const wm = massa(PONTO);
+  let s = `Composição global (fração molar)\n  x(etanol) = ${f4(PONTO[0])}   x(tolueno) = ${f4(PONTO[1])}   x(água) = ${f4(PONTO[2])}\n`;
+  s += `Composição em % (m/m)  [M: 46,0684 · 92,1405 · 18,0153 g·mol⁻¹]\n`;
+  s += `  etanol ${f2(wm.A)} %   tolueno ${f2(wm.B)} %   água ${f2(wm.C)} %\n`;
+  s += `\nFases em equilíbrio: `;
+  if (duas) {
+    const L = linhaDoPonto(PONTO, T);
+    const t = (PONTO[0] - L.b[0]) / Math.max(1e-9, L.c[0] - L.b[0]);
+    const mC = Math.min(0.999, Math.max(0.001, t));
+    s += `<b>DUAS</b>  (regra da alavanca)\n`;
+    s += `  camada α rica em B (tolueno):  x = ${f3(L.b[0])} / ${f3(L.b[1])} / ${f3(L.b[2])}   massa ${f2(100 * (1 - mC))} %\n`;
+    s += `  camada β rica em C (água):     x = ${f3(L.c[0])} / ${f3(L.c[1])} / ${f3(L.c[2])}   massa ${f2(100 * mC)} %\n`;
+    s += `  n(α)/n(β) = (x_C,β − x)/... = ${f3((1 - mC) / Math.max(0.001, mC))}`;
+  } else {
+    s += `<b>UMA</b> — o ponto está na região homogênea (acima da binodal).`;
+  }
+  $("#s1").innerHTML = s;
+  $("#tv").textContent = T + " °C";
+}
+
+/* ───────────────────────── Kps, ΔG°: com e sem atividade ───────────────────── */
+function card2() {
+  const t = parseFloat($("#t2").value), s = parseFloat($("#s2").value),
+        m = parseFloat($("#m2").value), g = parseFloat($("#g2").value);
+  const T = t + 273.15;
+  const Ksem = s * s, a = m * g, Kcom = a * a;
+  const dGsem = -R * T * Math.log(Ksem) / 1000, dGcom = -R * T * Math.log(Kcom) / 1000;
+  $("#s2out").innerHTML =
+    `T = ${f2(T)} K   ·   s = ${f2(s)} mol·L⁻¹   ·   m = ${f2(m)} mol·kg⁻¹   ·   γ± = ${f3(g)}\n` +
+    `Kps = s² = ${f2(Ksem)}        ΔG° = ${f2(dGsem)} kJ·mol⁻¹   <b>(atividades ignoradas — hipótese 1)</b>\n` +
+    `a± = (m/m°)·γ± = ${f3(a)}   →   K = a±² = ${f3(Kcom)}   ΔG° = ${f2(dGcom)} kJ·mol⁻¹   <b>(com atividade)</b>\n` +
+    `diferença entre os dois caminhos: ${f2(Math.abs(dGsem - dGcom))} kJ·mol⁻¹`;
+}
+
+/* ───────────────────────── van't Hoff ─────────────────────────────────────── */
+const PONTOS = [[68.5, 8.29], [56.0, 6.89], [47.6, 5.88], [41.4, 5.13], [36.4, 4.55]];
+function montaTabela() {
+  const tb = $("#tb").querySelector("tbody");
+  tb.innerHTML = PONTOS.map((p, i) =>
+    `<tr><td>${i + 1}</td>
+      <td><input type="number" step="0.1" value="${p[0]}" data-i="${i}" data-c="0" style="width:92px"></td>
+      <td><input type="number" step="0.01" value="${p[1]}" data-i="${i}" data-c="1" style="width:92px"></td></tr>`).join("");
+  tb.querySelectorAll("input").forEach(inp => inp.addEventListener("input", () => {
+    PONTOS[+inp.dataset.i][+inp.dataset.c] = parseFloat(inp.value) || 0; vh();
+  }));
+}
+function ajuste(xs, ys) {
+  const n = xs.length, sx = xs.reduce((a, b) => a + b, 0), sy = ys.reduce((a, b) => a + b, 0);
+  const sxx = xs.reduce((a, b) => a + b * b, 0), sxy = xs.reduce((a, b, i) => a + b * ys[i], 0);
+  const a = (n * sxy - sx * sy) / (n * sxx - sx * sx), b = (sy - a * sx) / n;
+  const ym = sy / n, tot = ys.reduce((s, y) => s + (y - ym) ** 2, 0);
+  const res = ys.reduce((s, y, i) => s + (y - (a * xs[i] + b)) ** 2, 0);
+  return { a, b, r2: tot > 0 ? 1 - res / tot : 1 };
+}
+function vh() {
+  const xs = PONTOS.map(p => 1 / (p[0] + 273.15)), ys = PONTOS.map(p => Math.log(p[1] * p[1]));
+  const { a, b, r2 } = ajuste(xs, ys);
+  const dH = -a * R / 1000, dS = b * R;
+  $("#s3").innerHTML = `ln Kps = ${a.toFixed(0)}·(1/T) + ${f3(b)}     R² = ${f4(r2)}\n` +
+    `inclinação = −ΔH°/R   →   ΔH° = ${f2(dH)} kJ·mol⁻¹     (manual: 34,9)\n` +
+    `intercepto = ΔS°/R    →   ΔS° = ${f2(dS)} J·mol⁻¹·K⁻¹   (manual: 115,7)`;
+  desenhaVH(xs, ys, a, b);
+}
+function desenhaVH(xs, ys, a, b) {
+  const c = $("#cv2"), g = c.getContext("2d");
+  g.clearRect(0, 0, c.width, c.height);
+  const L = 70, Rr = 30, Tp = 30, Bt = 60;
+  const x0 = Math.min(...xs) - 2e-4, x1 = Math.max(...xs) + 2e-4;
+  const y0 = Math.min(...ys) - 0.3, y1 = Math.max(...ys) + 0.3;
+  const X = v => L + (v - x0) / (x1 - x0) * (c.width - L - Rr);
+  const Y = v => c.height - Bt - (v - y0) / (y1 - y0) * (c.height - Bt - Tp);
+  g.strokeStyle = "#f5f2e8"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(L, Tp - 12); g.lineTo(L, c.height - Bt); g.lineTo(c.width - 14, c.height - Bt); g.stroke();
+  g.fillStyle = "#7fd4e8"; g.font = "bold 15px 'DejaVu Sans'";
+  g.fillText("ln Kps", 8, Tp - 16); g.fillText("1/T (K⁻¹)", c.width - 130, c.height - 22);
+  g.strokeStyle = "#ffe97a"; g.lineWidth = 3;
+  g.beginPath(); g.moveTo(X(x0), Y(a * x0 + b)); g.lineTo(X(x1), Y(a * x1 + b)); g.stroke();
+  g.fillStyle = "#e8a0d8";
+  xs.forEach((x, i) => { g.beginPath(); g.arc(X(x), Y(ys[i]), 6, 0, 7); g.fill(); });
+}
+/* ponto dentro do domo: usa a composição molar, com f(T)=1 */
+function dentroDomoPadrao(p) { return dentroDomo(p, 25); }
+
+function autoteste() {
+  const L = [];
+  const t = (nome, cond, val) => L.push((cond ? "PASS  " : "FALHA ") + nome + (val ? "   " + val : ""));
+  const T25 = 298.15;
+  t("Kps = s² com s = 3,257 mol·L⁻¹ → 10,61",
+    Math.abs(3.257 ** 2 - 10.61) < 0.02, (3.257 ** 2).toFixed(3));
+  const dGsem = -R * T25 * Math.log(3.257 ** 2) / 1000;
+  t("ΔG° sem atividades ≈ −5,85 kJ·mol⁻¹", Math.abs(dGsem + 5.85) < 0.02, dGsem.toFixed(3));
+  const Kcom = (3.788 * 0.234) ** 2;                 // γ± é por MOLALIDADE
+  const dGcom = -R * T25 * Math.log(Kcom) / 1000;
+  t("a± = m·γ± = 0,886 (m = 3,788 mol·kg⁻¹)", Math.abs(3.788 * 0.234 - 0.886) < 0.002,
+    (3.788 * 0.234).toFixed(4));
+  t("K com γ± = 0,234 ≈ 0,79", Math.abs(Kcom - 0.786) < 0.01, Kcom.toFixed(4));
+  t("ΔG° com atividades ≈ +0,60 kJ·mol⁻¹", Math.abs(dGcom - 0.60) < 0.02, dGcom.toFixed(3));
+  t("a hipótese 1 vale ~6,5 kJ·mol⁻¹", Math.abs((dGcom - dGsem) - 6.45) < 0.1, (dGcom - dGsem).toFixed(2));
+  const xs = PONTOS.map(p => 1 / (p[0] + 273.15)), ys = PONTOS.map(p => Math.log(p[1] ** 2));
+  const { a, r2 } = ajuste(xs, ys);
+  t("van't Hoff: ΔH° ≈ 32,9 kJ·mol⁻¹ (±0,3)", Math.abs(-a * R / 1000 - 32.9) < 0.3, (-a * R / 1000).toFixed(2));
+  t("R² do ajuste ≥ 0,99", r2 >= 0.99, r2.toFixed(4));
+  // geometria: ida e volta composição -> pixel -> composição
+  const p0 = [0.31, 0.22, 0.47], [ax, ay] = pix(p0), pr = composicao(ax, ay);
+  t("baricêntrica ida-e-volta estável", pr.every((v, i) => Math.abs(v - p0[i]) < 1e-6),
+    pr.map(f4).join(" / "));
+  t("composição soma 1 (pixel do vértice A)", Math.abs(composicao(V.A[0], V.A[1])[0] - 1) < 1e-6);
+  t("ponto perto do vértice A = 1 fase", !dentroDomoPadrao([0.85, 0.07, 0.08]));
+  t("ponto no meio da base = 2 fases", dentroDomoPadrao([0.05, 0.48, 0.47]));
+  t("k está dentro do triângulo", dentroTri(binodal(25)[K_PONTO].b));
+  t("as duas pontas de cada linha de amarração somam 1",
+    TIE.every(o => Math.abs(o.b[0] + o.b[1] + o.b[2] - 1) < 1e-9 && Math.abs(o.c[0] + o.c[1] + o.c[2] - 1) < 1e-9));
+  t("aquece → domo encolhe (f(40) < f(25))", fatorT(40) < fatorT(25), fatorT(40).toFixed(3));
+  const n = L.filter(l => l.startsWith("PASS")).length;
+  $("#st").textContent = L.join("\n") + "\n\n" + n + "/" + L.length + " verificações passaram" +
+    (n === L.length ? "  ✔" : "  ✘");
+  return n === L.length;
+}
+function ref() {
+  $("#ref").innerHTML =
+    `ρ(água) = 0,9982 g·mL⁻¹ a 20 °C  ·  ρ(tolueno) = 0,8669 g·mL⁻¹ a 20 °C  ·  ρ(etanol) = 0,7893 g·mL⁻¹ a 20 °C\n` +
+    `KNO₃: 38,3 g por 100 g de água a 25 °C (valor do manual)  ·  M = 101,1032 g·mol⁻¹\n` +
+    `ρ(solução saturada de KNO₃, 25 °C) = 1,189 g·cm⁻³  ·  m = 3,788 mol·kg⁻¹  ·  s = 3,257 mol·L⁻¹\n` +
+    `γ±(KNO₃, m ≈ 3,79) ≈ 0,234 (Hamer &amp; Wu 1972, Tabela 34; último ponto tabelado: 0,246 a 3,5 m)\n` +
+    `Exemplo de bancada: 68,5 / 56,0 / 47,6 / 41,4 / 36,4 °C → Kps 68,8 / 47,4 / 34,6 / 26,3 / 20,7`;
+}
+/* eventos */
+function clique(ev) {
+  const r = cv.getBoundingClientRect();
+  const px = (ev.clientX - r.left) * cv.width / r.width;
+  const py = (ev.clientY - r.top) * cv.height / r.height;
+  const p = composicao(px, py);
+  if (dentroTri(p)) { PONTO = p.map(v => Math.max(0, v)); const s = PONTO.reduce((a, b) => a + b, 0);
+    PONTO = PONTO.map(v => v / s); desenha(); }
+}
+window.addEventListener("load", () => {
+  cv = $("#cv"); ctx = cv.getContext("2d"); geom();
+  cv.addEventListener("click", clique);
+  $("#T").addEventListener("input", desenha);
+  ["t2", "s2", "m2", "g2"].forEach(id => $("#" + id).addEventListener("input", card2));
+  montaTabela(); vh(); desenha(); card2(); ref();
+  window.__autoteste = autoteste();
+  window.__pronto = true;
+});
+</script></body></html>

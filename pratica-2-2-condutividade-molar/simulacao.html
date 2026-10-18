@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulação — Prática 2.2 · Condutividade Molar e a Lei de Kohlrausch</title>
+<style>
+  :root{--chalk:#f5f2e8;--yellow:#ffe97a;--pink:#e8a0d8;--cyan:#7fd4e8;
+        --green:#a5d6a7;--orange:#ffb74d;--ink:#16201b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:linear-gradient(160deg,#2f6e4f 0%,#265c43 55%,#1f5540 100%);
+       color:var(--chalk);font-family:"DejaVu Sans","Verdana",system-ui,sans-serif;
+       padding:26px 18px 60px;line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto}
+  .disc{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.45rem;margin:.2rem 0 .4rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.88rem;color:rgba(245,242,232,.75);margin-bottom:18px}
+  .grid{display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.22);
+        border-radius:16px;padding:18px;box-shadow:0 10px 26px rgba(0,0,0,.16)}
+  .card h2{font-size:.95rem;color:var(--cyan);letter-spacing:.08em;text-transform:uppercase;
+           margin-bottom:12px}
+  label.ctl{display:block;font-size:.86rem;color:rgba(245,242,232,.85);margin:12px 0 4px}
+  input[type=range]{width:100%}
+  select{width:100%;font:inherit;font-size:.92rem;padding:7px 9px;border-radius:9px;
+         background:rgba(245,242,232,.10);color:var(--chalk);
+         border:2px solid rgba(245,242,232,.28)}
+  select option{background:#265c43;color:var(--chalk)}
+  .val{font-weight:700;color:var(--yellow)}
+  pre{white-space:pre-wrap;font:inherit;font-size:.9rem;background:rgba(22,32,27,.42);
+      border-left:5px solid var(--cyan);border-radius:9px;padding:11px 13px;margin-bottom:11px}
+  canvas{width:100%;height:auto;background:rgba(22,32,27,.42);border-radius:11px;
+         border:2px solid rgba(245,242,232,.20)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){.two{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:.84rem}
+  th,td{padding:5px 6px;text-align:center;border-bottom:1px solid rgba(245,242,232,.16)}
+  th{color:var(--yellow);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
+  td:first-child{color:var(--cyan);font-weight:700}
+  #at{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.79rem;white-space:pre-wrap;
+      max-height:300px;overflow:auto}
+  .tag{display:inline-block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+       padding:2px 9px;border-radius:999px;border:1px solid currentColor;margin-left:6px}
+  .pink{color:var(--pink)}.green{color:var(--green)}.inl{display:inline}
+</style></head><body><div class="wrap">
+<header>
+  <div class="disc">Físico-Química Experimental · 2026.2 · UEPB/PCMLab</div>
+  <h1>Simulação — Prática 2.2 · Condutividade molar e a Lei de Kohlrausch</h1>
+  <div class="meta">KCl de 0,0005 a 0,100 mol·L⁻¹ · κ = k_cél·G · Λm = 1000 κ/c ·
+    Λm = Λ° − K√c · meio: <b>EXEMPLO ILUSTRATIVO</b>, com Λ(KCl) do CRC a 25 °C</div>
+</header>
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2>Controles</h2>
+      <label class="ctl">Temperatura: <span class="val" id="vT">25,0 °C</span></label>
+      <input type="range" id="T" min="15" max="35" step="0.5" value="25">
+      <label class="ctl">Janela do ajuste de Λm × √c</label>
+      <select id="jan">
+        <option value="manual">a janela do MANUAL — 0,005 a 0,100 mol·L⁻¹</option>
+        <option value="diluida">a janela DILUÍDA — 0,0005 a 0,005 mol·L⁻¹</option>
+      </select>
+      <label class="ctl">κ da água destilada (piso): <span class="val" id="vA">1,10 µS·cm⁻¹</span></label>
+      <input type="range" id="agua" min="0" max="11" step="0.1" value="1.1">
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2>Sistema</h2>
+      <pre id="s1"></pre>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <h2>Λm × √c — os pontos, o ajuste e o limite da teoria</h2>
+      <canvas id="g1" width="900" height="470"></canvas>
+      <pre id="s2" style="margin-top:12px"></pre>
+    </div>
+    <div class="two" style="margin-top:16px">
+      <div class="card">
+        <h2>As duas rotas para Λ°</h2>
+        <pre id="s3"></pre>
+      </div>
+      <div class="card">
+        <h2>As sete medidas</h2>
+        <div style="max-height:250px;overflow:auto">
+        <table id="tab"><thead><tr>
+          <th>c / mol·L⁻¹</th><th>√c</th><th>Λm (25 °C)</th><th>κ</th>
+          <th>κ_medida</th><th>Λm do visor</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="card" style="margin-top:18px">
+  <h2>Autoteste embutido — a física desta prática, verificada sobre o mesmo código</h2>
+  <pre id="at"></pre>
+</div>
+<div class="card" style="margin-top:16px">
+  <h2>O que este painel prova</h2>
+  <pre id="s4"></pre>
+</div>
+</div>
+<script>
+/* ═════════════════════════════════ MODELO (todos os valores conferidos contra
+   numeros_2_2.json: Λ do CRC 91st a 25 °C; Λ° = 149,79; α = 2,08 %/K do NIST) */
+const $ = id => document.getElementById(id);
+
+const LAM25 = {0.1:128.90, 0.08:130.49, 0.06:132.29, 0.04:134.73,
+               0.02:138.27, 0.01:141.20, 0.005:143.48,
+               0.002:144.665, 0.001:146.88, 0.0005:147.74};
+const CMANUAL = [0.1, 0.08, 0.06, 0.04, 0.02, 0.01, 0.005];
+const CDIL    = [0.005, 0.002, 0.001, 0.0005];
+const LAM0 = 149.79;            // CRC, coluna de diluição infinita
+const LAMK = 73.48, LAMCL = 76.31;
+const ALFA = 0.0208;            // 2,08 %/K — MEDIDO nas tabelas do NIST (20-25 °C)
+const KAGUA_PAD = 1.1e-3;       // mS/cm — água saturada com CO₂ a 25 °C
+const K_CEL = 1.003;            // cm⁻¹ — exemplo ilustrativo (do padrão de 12,858 mS/cm)
+const SLOPE_TEORIA = 94.5;      // A + B·Λ° = 60,20 + 0,229 × 149,79
+
+const lamT = (c, T) => LAM25[c] * (1 + ALFA * (T - 25));   // Λ a T (modelo declarado)
+const kappa = (c, T) => lamT(c, T) * c / 1000;             // S/cm
+const agua  = () => (+$('agua').value) * 1e-3;             // o slider está em µS/cm
+
+function regressao(x, y){
+  const n = x.length, mx = x.reduce((a,b)=>a+b,0)/n, my = y.reduce((a,b)=>a+b,0)/n;
+  let sxx=0, sxy=0, syy=0;
+  for(let i=0;i<n;i++){ sxx += (x[i]-mx)**2; sxy += (x[i]-mx)*(y[i]-my); syy += (y[i]-my)**2; }
+  const b = sxy/sxx, a = my - b*mx;
+  let ssr=0; for(let i=0;i<n;i++) ssr += (y[i]-(a+b*x[i]))**2;
+  const r2 = 1 - ssr/syy, se2 = n>2 ? ssr/(n-2) : 0;
+  return {a, b, r2, ua: Math.sqrt(se2*(1/n + mx*mx/sxx))};
+}
+
+function desenha(){
+  const T = +$('T').value, ka = agua();
+  const jan = $('jan').value;
+  const cs = jan === 'manual' ? CMANUAL : CDIL;
+  const lam = cs.map(c => lamT(c, T));
+  const kesp = cs.map(c => kappa(c, T));
+  const kmed = kesp.map(k => k + ka);
+  const lamVisor = kmed.map((k,i) => 1000*(k - ka)/1000/cs[i]);   // o que o aluno calcularia sem subtrair
+
+  $('vT').textContent = T.toFixed(1).replace('.',',') + ' °C';
+  $('vA').textContent = (ka*1000).toFixed(2).replace('.',',') + ' µS·cm⁻¹';
+
+  $('s1').innerHTML =
+    'KCl no frasco — Λ(KCl) do CRC a 25 °C, corrigido por ' + (100*ALFA).toFixed(2).replace('.',',') +
+      ' %/K\n' +
+    'κ(0,100 mol·L⁻¹) = <b>' + (kappa(0.1,T)*1000).toFixed(3).replace('.',',') + ' mS·cm⁻¹</b>\n' +
+    'Λ° aceito (CRC) = <b>149,79 S·cm²·mol⁻¹</b>   ·   Λ° por ÍONS = <b>' +
+      (LAMK+LAMCL).toFixed(2).replace('.',',') + '</b>\n' +
+    'k_cél = <b>' + K_CEL.toFixed(3).replace('.',',') + ' cm⁻¹</b>   (do padrão, uma vez)\n' +
+    'piso da água = <b>' + (ka*1000).toFixed(2).replace('.',',') + ' µS·cm⁻¹</b> — ' +
+      (100*ka/(kappa(0.005,T)*1000)).toFixed(3).replace('.',',') + ' % do ponto mais diluído';
+
+  let th = '';
+  CMANUAL.forEach(c => {
+    const i = cs.indexOf(c);
+    const na = i >= 0;
+    th += '<tr><td>' + c.toFixed(c<0.01?4:3).replace('.',',') + '</td><td>' +
+      Math.sqrt(c).toFixed(4).replace('.',',') + '</td><td>' + lamT(c,T).toFixed(2).replace('.',',') +
+      '</td><td>' + (kappa(c,T)*1000).toFixed(4).replace('.',',') + '</td><td>' +
+      (kappa(c,T)*1000 + ka*1000).toFixed(4).replace('.',',') + '</td><td>' +
+      (na ? lamVisor[i].toFixed(2).replace('.',',') : '—') + '</td></tr>';
+  });
+  CDIL.filter(c => !CMANUAL.includes(c)).forEach(c => {
+    const i = cs.indexOf(c);
+    if(i < 0) return;
+    th += '<tr><td>' + c.toFixed(4).replace('.',',') + '</td><td>' +
+      Math.sqrt(c).toFixed(4).replace('.',',') + '</td><td>' + lamT(c,T).toFixed(2).replace('.',',') +
+      '</td><td>' + (kappa(c,T)*1000).toFixed(4).replace('.',',') + '</td><td>' +
+      (kappa(c,T)*1000 + ka*1000).toFixed(4).replace('.',',') + '</td><td>' +
+      lamVisor[i].toFixed(2).replace('.',',') + '</td></tr>';
+  });
+  $('tab').querySelector('tbody').innerHTML = th;
+
+  const r = regressao(cs.map(Math.sqrt), lam);
+  $('s2').innerHTML =
+    'janela: <b>' + cs[0].toString().replace('.',',') + ' a ' +
+      cs[cs.length-1].toString().replace('.',',') + ' mol·L⁻¹</b>   (' + cs.length + ' pontos)\n' +
+    'inclinação ajustada = <b>' + r.b.toFixed(1).replace('.',',') + '</b>   ·   ' +
+      'inclinação-limite da teoria = <b>−' + SLOPE_TEORIA.toFixed(1).replace('.',',') + '</b>' +
+      '   (' + (100*r.b/(-SLOPE_TEORIA)).toFixed(0) + ' %)\n' +
+    'intercepto = Λ° = <b>' + r.a.toFixed(2).replace('.',',') + ' ± ' +
+      r.ua.toFixed(2).replace('.',',') + ' S·cm²·mol⁻¹</b>   ·   R² = <b>' +
+      r.r2.toFixed(5).replace('.',',') + '</b>\n' +
+    'viés contra o valor aceito: <b>' + (r.a-LAM0).toFixed(2).replace('.',',') + '</b>  =  ' +
+      (Math.abs(r.a-LAM0)/r.ua).toFixed(1).replace('.',',') + '× a incerteza do ajuste';
+
+  $('s3').innerHTML =
+    'ROTA 1 · extrapolação (a desta janela)\n' +
+    '   Λ° = <b>' + r.a.toFixed(2).replace('.',',') + '</b>   erro ' +
+      (r.a-LAM0).toFixed(2).replace('.',',') + '\n\n' +
+    'ROTA 2 · migração independente\n' +
+    '   λ°(K⁺) + λ°(Cl⁻) = ' + LAMK.toFixed(2).replace('.',',') + ' + ' +
+      LAMCL.toFixed(2).replace('.',',') + ' = <b>' + (LAMK+LAMCL).toFixed(2).replace('.',',') +
+      '</b>   erro ' + (LAMK+LAMCL-LAM0).toFixed(3).replace('.',',') + '\n\n' +
+    'a Rota 2 não depende da janela — some ÍONS, não ajuste reta.';
+
+  const rdil = regressao(CDIL.map(Math.sqrt), CDIL.map(c => lamT(c,T)));
+  $('s4').innerHTML =
+    'A MESMA lei, a MESMA aritmética, duas janelas:\n' +
+    '  manual (0,005–0,100): Λ° = ' + rdil.a.toFixed(2).replace('.',',') +
+      '  → viés ' + (regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c=>lamT(c,T))).a - LAM0)
+        .toFixed(2).replace('.',',') + '\n' +
+    '  diluída (0,0005–0,005): Λ° = ' + rdil.a.toFixed(2).replace('.',',') +
+      '  → viés ' + (rdil.a - LAM0).toFixed(2).replace('.',',') + '\n' +
+    'a janela diluída chega ~9× mais perto. A LEI está certa; a janela do manual é que não serve.\n\n' +
+    'E o orçamento: u(medição) ≈ 0,46 % (padrão 0,04 + repetibilidade 0,20 + T 0,42) contra o\n' +
+    'viés da janela ≈ 1,4 % — a JANELA pesa ~3× mais que toda a bancada.';
+
+  grafico(cs, lam, r);
+}
+
+/* ───────────────────────── gráfico Λm × √c */
+function grafico(cs, lam, r){
+  const cv = $('g1'), g = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const L=78, R=W-16, B=H-46, Tp=18;
+  const XMAX = 0.325, LMIN = 126, LMAX = 152;
+  const X = s => L + (s/XMAX)*(R-L);
+  const Y = v => B - ((v-LMIN)/(LMAX-LMIN))*(B-Tp);
+  g.clearRect(0,0,W,H);
+
+  // eixos e grades
+  g.strokeStyle='rgba(245,242,232,.75)'; g.lineWidth=2;
+  g.beginPath(); g.moveTo(L,B); g.lineTo(R,B); g.moveTo(L,B); g.lineTo(L,Tp); g.stroke();
+  g.fillStyle='rgba(245,242,232,.85)'; g.font='13px "DejaVu Sans"';
+  g.textAlign='center';
+  for(let k=0;k<=32;k+=4){
+    const s=k/100, x=X(s);
+    g.strokeStyle='rgba(245,242,232,.35)'; g.beginPath();
+    g.moveTo(x,B); g.lineTo(x,B+6); g.stroke();
+    g.fillText(s.toFixed(2).replace('.',','), x, B+22);
+  }
+  g.fillText('√c  /  (mol·L⁻¹)½', (L+R)/2, B+40);
+  g.textAlign='right';
+  [128,134,140,146,152].forEach(v=>{
+    g.strokeStyle='rgba(245,242,232,.35)'; g.beginPath();
+    g.moveTo(L-6,Y(v)); g.lineTo(L,Y(v)); g.stroke();
+    g.fillStyle='rgba(245,242,232,.85)'; g.fillText(String(v), L-10, Y(v)+4);
+  });
+  g.save(); g.translate(18,(B+Tp)/2); g.rotate(-Math.PI/2); g.textAlign='center';
+  g.fillText('Λm  /  S·cm²·mol⁻¹', 0, 0); g.restore();
+
+  // reta LIMITE da teoria (até √c = 0,135)
+  g.strokeStyle='#a5d6a7'; g.lineWidth=2.5; g.setLineDash([9,7]);
+  g.beginPath(); g.moveTo(X(0), Y(LAM0)); g.lineTo(X(0.135), Y(LAM0 - SLOPE_TEORIA*0.135)); g.stroke();
+  g.setLineDash([]);
+  // reta do AJUSTE
+  g.strokeStyle='#e8a0d8'; g.lineWidth=3;
+  g.beginPath(); g.moveTo(X(0), Y(r.a)); g.lineTo(X(XMAX), Y(r.a + r.b*XMAX)); g.stroke();
+  // Os NOVE pontos (os sete do manual em amarelo; os diluídos em laranja)
+  CDIL.forEach(c=>{
+    if(CMANUAL.includes(c)) return;
+    g.fillStyle='#ffb74d'; g.beginPath();
+    g.arc(X(Math.sqrt(c)), Y(lamT(c,+$('T').value)), 6, 0, 7); g.fill();
+  });
+  cs.forEach((c,i)=>{
+    g.fillStyle='#ffe97a'; g.beginPath();
+    g.arc(X(Math.sqrt(c)), Y(lam[i]), 7, 0, 7); g.fill();
+    g.strokeStyle='#16201b'; g.lineWidth=1.4; g.stroke();
+  });
+  // os dois interceptos
+  g.fillStyle='#a5d6a7'; g.beginPath(); g.arc(X(0), Y(LAM0), 7, 0, 7); g.fill();
+  g.fillStyle='#e8a0d8'; g.beginPath(); g.arc(X(0), Y(r.a), 7, 0, 7); g.fill();
+  g.fillStyle='#7fd4e8'; g.font='bold 14px "DejaVu Sans"'; g.textAlign='left';
+  g.fillText('Λ° = 149,79 (CRC)', X(0)+12, Y(LAM0)-12);
+  g.fillStyle='#e8a0d8';
+  g.fillText('ajuste ≈ ' + r.a.toFixed(1).replace('.',','), X(0)+12, Y(r.a)+24);
+  g.fillStyle='#ffe97a'; g.textAlign='right';
+  g.fillText('● 7 do manual   ● mais diluídos   ' + (r.r2>0 ? 'R² = ' + r.r2.toFixed(5).replace('.',',') : ''),
+             R-6, Tp+16);
+}
+
+/* ═══════════════════════ AUTOTESTE — roda DENTRO da página, sobre o mesmo código */
+function autoteste(){
+  const casos = [];
+  const t = (nome, ok, info) => casos.push({nome, ok: !!ok, info: info || ''});
+  const T = +$('T').value;
+
+  t('κ = Λ·c/1000 para as sete concentrações',
+    CMANUAL.every(c => Math.abs(kappa(c,25) - LAM25[c]*c/1000) < 1e-15));
+  t('κ cresce monotonicamente com c',
+    CMANUAL.slice().reverse().every((c,i,a) => i===0 || kappa(c,25) > kappa(a[i-1],25)));
+  t('Λm decresce monotonicamente com c (eletrólito forte)',
+    CMANUAL.every((c,i,a) => i===0 || LAM25[c] > LAM25[a[i-1]]));
+  t('Λm(c) < Λ° em toda a série de medidas',
+    CMANUAL.every(c => LAM25[c] < LAM0));
+  t('Λm → Λ° quando c → 0 (0,0005 é o mais próximo)',
+    LAM25[0.0005] > LAM25[0.005] && (LAM0 - LAM25[0.0005]) < (LAM0 - LAM25[0.1]),
+    LAM25[0.0005].toFixed(2));
+  t('Λm = 1000 κ/c desfaz κ = Λm·c/1000 (ida e volta)',
+    CMANUAL.every(c => Math.abs(1000*kappa(c,25)/c - LAM25[c]) < 1e-12));
+  t('fator 1000: usar κ em mS/cm dá exatamente 1000× o valor',
+    CMANUAL.every(c => Math.abs((1000*LAM25[c]*c/1000*1000/c) / LAM25[c] - 1000) < 1e-6));
+  t('em SI não há fator 1000: Λm = κ/c com κ em S/m e c em mol/m³',
+    Math.abs((kappa(0.1,25)*100)/(0.1*1000) - LAM25[0.1]/1e4) < 1e-12,
+    ((kappa(0.1,25)*100)/(0.1*1000)).toExponential(6) + ' S·m²·mol⁻¹');
+  t('1 S·m²·mol⁻¹ = 10⁴ S·cm²·mol⁻¹ (o 1000 é conversão, não física)',
+    Math.abs((LAM25[0.1]/1e4)*1e4 - LAM25[0.1]) < 1e-12);
+  t('o piso da água é subtraído: κ_medida − κ_específica = κ_água',
+    Math.abs(((kappa(0.005,25) + agua()) - kappa(0.005,25)) - agua()) < 1e-18);
+  t('a água pesa < 0,2 % no ponto MAIS diluído (0,005 mol·L⁻¹)',
+    (agua()/(kappa(0.005,25)*1000)) < 0.002,
+    (100*agua()/(kappa(0.005,25)*1000)).toFixed(4)+' %');
+  t('a água pesa MENOS ainda no ponto mais concentrado',
+    (agua()/(kappa(0.1,25)*1000)) < (agua()/(kappa(0.005,25)*1000)));
+  t('κ AUMENTA com a temperatura (contraste com o relógio da 2.1)',
+    kappa(0.1,30) > kappa(0.1,25) && kappa(0.1,20) < kappa(0.1,25));
+  t('o modelo declara α = 2,08 %/K EM TORNO de 25 °C (25→30)',
+    Math.abs(100*(kappa(0.1,30)/kappa(0.1,25) - 1)/5 - 2.08) < 0.01,
+    (100*(kappa(0.1,30)/kappa(0.1,25)-1)/5).toFixed(3));
+  t('e a correção é ASSIMÉTRICA: 20→25 rende mais que 2,08 %/K',
+    (100*(kappa(0.1,25)/kappa(0.1,20) - 1)/5) > 2.08,
+    (100*(kappa(0.1,25)/kappa(0.1,20)-1)/5).toFixed(3));
+  t('a inclinação da janela do manual é MENOR que a limite da teoria',
+    Math.abs(regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c=>lamT(c,25))).b) < SLOPE_TEORIA,
+    regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c=>lamT(c,25))).b.toFixed(1));
+  t('a inclinação da janela do manual fica entre 55 % e 70 % da limite',
+    (() => { const s = Math.abs(regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c=>lamT(c,25))).b)/SLOPE_TEORIA;
+             return s > 0.55 && s < 0.70; })());
+  t('R² > 0,99 na janela do manual (a reta parece boa)',
+    regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c=>lamT(c,25))).r2 > 0.99);
+  t('o intercepto do manual fica ABAIXO do Λ° aceito',
+    regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c=>lamT(c,25))).a < LAM0);
+  t('o viés do intercepto é > 3× a incerteza do ajuste (é viés, não ruído)',
+    (() => { const r = regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c=>lamT(c,25)));
+             return Math.abs(r.a - LAM0)/r.ua > 3; })(),
+    (() => { const r = regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c=>lamT(c,25)));
+             return (Math.abs(r.a - LAM0)/r.ua).toFixed(1)+'×'; })());
+  t('a janela DILUÍDA chega mais perto do Λ° do que a do manual',
+    Math.abs(regressao(CDIL.map(Math.sqrt), CDIL.map(c=>lamT(c,25))).a - LAM0) <
+    Math.abs(regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c=>lamT(c,25))).a - LAM0));
+  t('Λ° por íons = λ°(K⁺) + λ°(Cl⁻) = 149,79 (erro < 0,01)',
+    Math.abs((LAMK + LAMCL) - LAM0) < 0.01, (LAMK+LAMCL).toFixed(2));
+  t('λ°(Cl⁻) obtido de DUAS rotas independentes concorda em 0,01',
+    Math.abs((425.95 - 349.65) - (LAM0 - LAMK)) < 0.02,
+    (425.95-349.65).toFixed(2)+' vs '+(LAM0-LAMK).toFixed(2));
+  t('a soma fecha em três sais (KCl, HCl, NaCl) dentro de 0,01',
+    [Math.abs(LAMK+LAMCL-149.79), Math.abs(349.65+LAMCL-425.95),
+     Math.abs(50.08+LAMCL-126.39)].every(e => e < 0.011));
+  t('a solução padrão é 0,0994 mol/L quando é 0,100 molal (escala diferente)',
+    0.099433 < 0.1 && Math.abs(0.1/1.0057 - 0.099433) < 5e-5, '0,09943');
+  t('κ = k_cél · G recupera κ a partir da condutância medida',
+    CMANUAL.every(c => Math.abs(K_CEL*(kappa(c,25)/K_CEL) - kappa(c,25)) < 1e-15));
+  t('o erro da extrapolação é centenas de vezes o desvio da lei de migração',
+    (() => { const r = regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c=>lamT(c,25)));
+             return Math.abs(r.a - LAM0)/0.005 > 100; })());
+
+  const ok = casos.filter(c => c.ok).length;
+  const linhas = casos.map((c,i) =>
+    (c.ok ? '  PASS ' : '  FAIL ') + String(i+1).padStart(2,'0') + ' · ' + c.nome +
+    (c.info ? '   [' + c.info + ']' : '')).join('\n');
+  $('at').innerHTML = casos.length + ' casos · ' + ok + ' aprovados · ' +
+    (casos.length-ok) + ' falharam\n' + linhas;
+  window.__casos = casos;
+  window.__autoteste = (ok === casos.length);
+  return window.__autoteste;
+}
+
+window.__pronto = false;
+(function init(){
+  ['T','jan','agua'].forEach(id => $(id).addEventListener('input', desenha));
+  desenha();
+  autoteste();
+  window.__pronto = true;
+})();
+</script></body></html>

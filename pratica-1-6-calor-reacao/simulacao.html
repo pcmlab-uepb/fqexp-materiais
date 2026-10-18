@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulação — Determinação de Calor de Reação (Prática 1.6)</title>
+<style>
+  :root{--chalk:#f5f2e8;--yellow:#ffe97a;--pink:#e8a0d8;--cyan:#7fd4e8;--green:#a5d6a7;
+        --orange:#ffb74d;--ink:#16201b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:linear-gradient(160deg,#2f6e4f,#265c43 55%,#1f5540);color:var(--chalk);
+       font-family:"DejaVu Sans","Verdana",system-ui,sans-serif;line-height:1.5;padding:26px 18px 70px}
+  .wrap{max-width:1080px;margin:0 auto}
+  header{margin-bottom:20px}
+  .disc{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.45rem;margin:.25rem 0 .4rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.9rem;color:rgba(245,242,232,.75)}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.2);border-radius:16px;
+        padding:20px;margin-top:18px}
+  .card h2{font-size:1.06rem;color:var(--cyan);margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  canvas{background:rgba(15,40,30,.55);border-radius:12px;border:1px solid rgba(245,242,232,.18);
+         max-width:100%}
+  label{font-size:.85rem;color:rgba(245,242,232,.85);display:block;margin-top:10px}
+  input[type=number],select{width:130px;background:rgba(245,242,232,.08);
+        border:1.5px solid rgba(245,242,232,.3);color:var(--chalk);border-radius:8px;
+        padding:5px 8px;font:inherit;font-size:.9rem}
+  input[type=range]{width:100%;accent-color:#7fd4e8;margin-top:4px}
+  .out{font-size:.94rem;background:rgba(22,32,27,.42);border-left:5px solid var(--cyan);
+       border-radius:8px;padding:11px 13px;margin-top:12px;white-space:pre-wrap}
+  .out b{color:var(--yellow)}
+  .ok{color:var(--green)} .no{color:var(--pink)}
+  table{width:100%;border-collapse:collapse;font-size:.87rem;margin-top:10px}
+  th,td{padding:5px 7px;border-bottom:1px solid rgba(245,242,232,.14);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--yellow);font-weight:700}
+  .hint{font-size:.82rem;color:rgba(245,242,232,.62);margin-top:10px}
+  .k{color:var(--cyan);font-weight:700}
+  pre{font-size:.83rem;background:rgba(22,32,27,.5);border-radius:8px;padding:11px;overflow:auto;
+      white-space:pre-wrap}
+  #st{font-size:.9rem;color:rgba(245,242,232,.8);margin-top:10px}
+</style></head><body>
+<div class="wrap">
+  <header>
+    <div class="disc">Físico-Química Experimental · 2026.2 · UEPB/PCMLab</div>
+    <h1>Simulação — Prática 1.6: determinação de calor de reação</h1>
+    <div class="meta">
+      Calorimetria simples: calibração do calorímetro · entalpia de neutralização · entalpia de
+      dissolução · lei de Hess.<br>
+      <b>Fonte de procedimento:</b> Shoemaker, Garland &amp; Nibler, <i>Experiments in Physical
+      Chemistry</i>, 8. ed. (2008) — «Principles of Calorimetry» (Cap. VI, pp. 145–150) e
+      «Exp. 8 — Heats of Ionic Reaction» (pp. 167–171); Bettelheim, <i>Experimental Physical
+      Chemistry</i> (1971), Exp. 6 (pp. 78–81). A <b>apostila em uso</b> da disciplina não cobre
+      calorimetria — a busca por «calorimetr», «calor de reação» e «Hess» nela devolve zero
+      ocorrências. O método da mistura e a nomenclatura de Regnault–Pfaundler vêm da apostila
+      em elaboração (adaptado).<br>
+      Os números desta página são <b>modelos didáticos declarados</b> — não são medidas de bancada.
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>1 · A curva T × t e a correção da linha de base</h2>
+    <div class="grid">
+      <canvas id="cv" width="560" height="420"></canvas>
+      <div>
+        <label>Perda de calor / atrito do agitador — deriva do período final
+          <span class="k" id="lv">−0,08 °C/min</span></label>
+        <input type="range" id="leak" min="-0.20" max="0" step="0.005" value="-0.08">
+        <label>Capacidade do calorímetro C<sub>cal</sub> — <span class="k" id="cv2">46,0 J·K⁻¹</span></label>
+        <input type="range" id="ccal" min="10" max="60" step="1" value="46">
+        <div class="out" id="s1"></div>
+        <div class="hint">A deriva do período final é o rastro da troca de calor com o ambiente.
+          Esticando as duas retas até o instante τ obtém-se o ΔT corrigido. Desligue a deriva
+          (arraste para 0) e veja o ΔT "de pico" virar o resultado — e o erro que isso traz.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Calibração — quanto calor o APARELHO absorve por grau</h2>
+    <div class="grid">
+      <div>
+        <label>Resistência da bobina R<sub>h</sub> / Ω</label>
+        <input type="number" id="rh" value="6.00" step="0.01">
+        <label>Corrente I / A</label>
+        <input type="number" id="ia" value="1.50" step="0.01">
+        <label>Tempo de aquecimento t / s</label>
+        <input type="number" id="ta" value="60.0" step="0.1">
+        <label>ΔT do aquecimento / °C</label>
+        <input type="number" id="dta" value="1.70" step="0.01">
+        <div class="out" id="s2"></div>
+      </div>
+      <div>
+        <label>— ou o método da mistura (água quente + fria) —</label>
+        <label>m da água quente / g</label><input type="number" id="mq" value="50.0" step="0.1">
+        <label>θ da água quente / °C</label><input type="number" id="tq" value="42.0" step="0.1">
+        <label>m da água fria / g</label><input type="number" id="mf" value="50.0" step="0.1">
+        <label>θ da água fria / °C</label><input type="number" id="tf" value="24.0" step="0.1">
+        <label>θ de equilíbrio (corrigida) / °C</label><input type="number" id="teq" value="32.3" step="0.1">
+        <div class="out" id="s3"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3 · A reação — entalpia e confronto com a literatura</h2>
+    <div class="grid">
+      <div>
+        <label>Reação</label>
+        <select id="rx">
+          <option value="neut">Neutralização — HCl(aq) + NaOH(aq)</option>
+          <option value="diss">Dissolução — KNO₃(s) em água</option>
+        </select>
+        <label>Volume de HCl 1,000 mol·L⁻¹ / mL</label><input type="number" id="vh" value="50.00" step="0.01">
+        <label>Volume de NaOH 1,000 mol·L⁻¹ / mL</label><input type="number" id="vn" value="50.00" step="0.01">
+        <label>Massa de KNO₃ / g (só para a dissolução)</label><input type="number" id="mk" value="10.10" step="0.01">
+        <label>Volume de água para a dissolução / mL</label><input type="number" id="va" value="100.0" step="0.1">
+        <label>ΔT<sub>corrigido</sub> / °C</label><input type="number" id="dt" value="6.00" step="0.01">
+        <div class="out" id="s4"></div>
+      </div>
+      <div>
+        <table>
+          <tr><th>Referência</th><th>kJ·mol⁻¹</th><th>condição</th></tr>
+          <tr><td>NIST / CODATA (ΔH°f)</td><td>−55,84</td><td>diluição infinita</td></tr>
+          <tr><td>Parker et al. (1956)</td><td>−56,60</td><td>extrapolado</td></tr>
+          <tr><td>tabela de prática (NBS)</td><td>−57,30</td><td>≈ 1 mol·L⁻¹</td></tr>
+          <tr><td>ΔH°diss (KNO₃, 25 °C)</td><td>+34,89</td><td>CRC / Shoemaker</td></tr>
+        </table>
+        <div class="out" id="s5"></div>
+        <div class="hint">A amplitude entre as três referências de neutralização é 1,46 kJ·mol⁻¹ —
+          maior que a incerteza típica da medida. Declarar <b>com qual delas</b> você comparou
+          faz parte do resultado.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>4 · Lei de Hess — o caminho que ninguém mediu</h2>
+    <div class="out" id="s6"></div>
+    <div class="hint">ΔH₁ é tabelado (dissolução do NaOH sólido, NIST). ΔH₂ é o que você mede na
+      bancada. ΔH₃ — HCl(aq) + NaOH(s) → NaCl(aq) + H₂O(l) — não se mede direto: a lei de Hess
+      o entrega. É assim que se constrói quase toda tabela de entalpia de formação.</div>
+  </div>
+
+  <div class="card">
+    <h2>5 · Autoteste embutido</h2>
+    <div id="st"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const CW = 4.184, RHO_HCL = 1.016, RHO_NAOH = 1.042, RHO_AGUA25 = 0.99705;
+const M_KNO3 = 101.1032;
+const REF = {nist:-55.84, parker:-56.60, prat:-57.30, diss:34.89};
+const U_DH = 0.86;                       // kJ/mol, k = 1 (numeros_1_6.json)
+const $ = id => document.getElementById(id);
+const f = (x, n=2) => x.toLocaleString('pt-BR', {minimumFractionDigits:n, maximumFractionDigits:n});
+
+/* ── modelos ────────────────────────────────────────────────────────── */
+function wel(Rh, I, t){ return I*I*Rh*t; }                        // J
+function cTotal(m, ccal, c=CW){ return m*c + ccal; }              // J/K
+function mTotalHClNaOH(vh, vn){ return vh*RHO_HCL + vn*RHO_NAOH; }
+function dH(vh, vn, dt, ccal){                                    // kJ/mol
+  const m = mTotalHClNaOH(vh, vn);
+  const n = 1.000*Math.min(vh, vn)/1000;
+  return -cTotal(m, ccal)*dt/n/1000;
+}
+function dHDiss(mk, va, dt, ccal){                                // kJ/mol
+  const m = va*RHO_AGUA25 + mk, n = mk/M_KNO3;
+  return -cTotal(m, ccal)*dt/n/1000;
+}
+function ccalMistura(mq, tq, mf, tf, teq){
+  return CW*(mq*(tq-teq) - mf*(teq-tf))/(teq-tf);
+}
+
+/* ── curva T × t (modelo: deriva linear + salto no instante tau) ───── */
+const TAUS = 2.0, T0 = 23.50, DTM = 6.00, N = 11;
+function pontos(leak){
+  const p = [];
+  for (let k=0;k<=N;k++){
+    const t = k;
+    let T;
+    if (t <= TAUS){
+      T = T0 + 0.10*t;                                   // pré-inicial
+    } else {
+      const base = 23.50 + 0.10*TAUS + (-leak*TAUS);     // reta final esticada para trás
+      const rise = DTM * Math.exp(-(t-TAUS)/1.15);       // relaxação após a mistura
+      T = base + leak*t + rise;
+    }
+    p.push([t, T]);
+  }
+  return p;
+}
+function ajusta(pts){
+  const n = pts.length; if (n < 2) return [0,0];
+  let sx=0, sy=0, sxx=0, sxy=0;
+  for (const [x,y] of pts){ sx+=x; sy+=y; sxx+=x*x; sxy+=x*y; }
+  const a = (n*sxy - sx*sy)/(n*sxx - sx*sx);
+  return [a, (sy - a*sx)/n];
+}
+
+function desenha(){
+  const cv = $('cv'), g = cv.getContext('2d');
+  const leak = parseFloat($('leak').value), ccal = parseFloat($('ccal').value);
+  g.clearRect(0,0,cv.width,cv.height);
+  const X = t => 62 + t/10*(cv.width-92);
+  const Y = T => cv.height-58 - (T-23)/(30-23)*(cv.height-108);
+  // eixos
+  g.strokeStyle='rgba(245,242,232,.55)'; g.lineWidth=2;
+  g.beginPath(); g.moveTo(62, cv.height-58); g.lineTo(cv.width-20, cv.height-58); g.stroke();
+  g.beginPath(); g.moveTo(62, cv.height-58); g.lineTo(62, 34); g.stroke();
+  g.fillStyle='rgba(245,242,232,.85)'; g.font='13px "DejaVu Sans"';
+  g.fillText('t / min', cv.width-70, cv.height-34);
+  g.fillText('T / °C', 14, 44);
+  for (let t=0;t<=10;t+=2){ g.fillText(String(t), X(t)-3, cv.height-40); }
+  for (let T=23;T<=30;T+=1){ g.fillText(String(T), 34, Y(T)+4); }
+  const pts = pontos(leak);
+  // retas dos períodos
+  const pre = ajusta(pts.slice(0,3)), fim = ajusta(pts.slice(7));
+  g.setLineDash([7,5]);
+  g.strokeStyle='rgba(255,233,122,.95)'; g.lineWidth=2;
+  g.beginPath(); g.moveTo(X(0), Y(pre[0]*0+pre[1])); g.lineTo(X(10), Y(pre[0]*10+pre[1])); g.stroke();
+  g.strokeStyle='rgba(127,212,232,.95)';
+  g.beginPath(); g.moveTo(X(0), Y(fim[0]*0+fim[1])); g.lineTo(X(10), Y(fim[0]*10+fim[1])); g.stroke();
+  g.setLineDash([]);
+  // tau
+  g.strokeStyle='rgba(232,160,216,.9)'; g.lineWidth=2;
+  g.beginPath(); g.moveTo(X(TAUS), cv.height-58); g.lineTo(X(TAUS), 40); g.stroke();
+  g.fillStyle='rgba(232,160,216,1)'; g.fillText('τ', X(TAUS)-3, 32);
+  // pontos
+  g.fillStyle='rgba(165,214,167,1)';
+  for (const [t,T] of pts){ g.beginPath(); g.arc(X(t), Y(T), 4, 0, 6.283); g.fill(); }
+  // ΔT corrigido
+  const Tpre = pre[1] + pre[0]*TAUS, Tfin = fim[1] + fim[0]*TAUS;
+  const dTc = Tfin - Tpre, pico = Math.max(...pts.map(p=>p[1])), dTn = pico - pts[0][1];
+  g.strokeStyle='#f5f2e8'; g.lineWidth=3;
+  g.beginPath(); g.moveTo(X(TAUS)+26, Y(Tpre)); g.lineTo(X(TAUS)+26, Y(Tfin)); g.stroke();
+  g.fillStyle='#f5f2e8'; g.font='bold 13px "DejaVu Sans"';
+  g.fillText('ΔT', X(TAUS)+34, (Y(Tpre)+Y(Tfin))/2);
+  // resultados
+  const Hc = dH(50, 50, dTc, ccal), Hn = dH(50, 50, dTn, ccal);
+  $('s1').innerHTML =
+    'ΔT corrigido (reta final esticada até τ) = <b>'+f(dTc)+' °C</b><br>'+
+    'ΔT de pico (pico − inicial), SEM correção = <b>'+f(dTn)+' °C</b><br>'+
+    'ΔH<sub>neut</sub> com correção  = <b>'+f(Hc)+' kJ·mol⁻¹</b><br>'+
+    'ΔH<sub>neut</sub> sem correção   = <b>'+f(Hn)+' kJ·mol⁻¹</b><br>'+
+    'erro de quem não corrige = <b>'+f(Math.abs(Hn-Hc))+' kJ·mol⁻¹</b> '+
+    '(<b>'+f(Math.abs(Hn-Hc)/U_DH,1)+' × u(ΔH)</b>)<br>'+
+    '<span class="hint">u(ΔH) = '+f(U_DH)+' kJ·mol⁻¹ (k = 1). Compare com −57,30 (tabela de '+
+    'prática) e −55,84 (NIST, diluição infinita).</span>';
+  $('lv').textContent = f(leak,3).replace('.',',')+' °C/min';
+  $('cv2').textContent = f(ccal,1)+' J·K⁻¹';
+}
+
+function calibra(){
+  const Rh=+$('rh').value, I=+$('ia').value, t=+$('ta').value, dT=+$('dta').value;
+  const w = wel(Rh,I,t), C = w/dT;
+  $('s2').innerHTML = 'w<sub>el</sub> = I²·R<sub>h</sub>·t = '+f(I,2)+'² × '+f(Rh,2)+' × '+
+    f(t,1)+' = <b>'+f(w,1)+' J</b><br>C<sub>total</sub> = w<sub>el</sub>/ΔT = '+
+    f(w,1)+' / '+f(dT,2)+' = <b>'+f(C,1)+' J·K⁻¹</b>';
+  return C;
+}
+function mistura(){
+  const mq=+$('mq').value, tq=+$('tq').value, mf=+$('mf').value, tf=+$('tf').value, teq=+$('teq').value;
+  let C=NaN, msg='';
+  if (teq <= tf) { msg='A θ de equilíbrio precisa ser maior que a da água fria.'; }
+  else { C = ccalMistura(mq,tq,mf,tf,teq); }
+  $('s3').innerHTML = isNaN(C) ? '<span class="no">'+msg+'</span>' :
+    'C<sub>cal</sub> = c·[m<sub>q</sub>(θ<sub>q</sub>−θ<sub>eq</sub>) − m<sub>f</sub>(θ<sub>eq</sub>−θ<sub>f</sub>)] / (θ<sub>eq</sub>−θ<sub>f</sub>)<br>'+
+    '= 4,184·['+f(mq,1)+'×'+f(tq-teq,1)+' − '+f(mf,1)+'×'+f(teq-tf,1)+'] / '+f(teq-tf,1)+
+    ' = <b>'+f(C,1)+' J·K⁻¹</b><br><span class="hint">Se as massas de água quente e fria fossem '+
+    'iguais e não houvesse troca com o aparelho, θ<sub>eq</sub> cairia no meio — ele fica ABAIXO '+
+    'do meio justamente porque o calorímetro fica com uma parte do calor.</span>';
+  return C;
+}
+function reacao(){
+  const ccal = +$('ccal').value, dt = +$('dt').value, modo = $('rx').value;
+  let H, det, ref, nome;
+  if (modo === 'neut'){
+    const vh=+$('vh').value, vn=+$('vn').value;
+    const m = mTotalHClNaOH(vh,vn), n = Math.min(vh,vn)/1000;
+    H = dH(vh, vn, dt, ccal); ref = REF.prat; nome = 'ΔH_neut';
+    det = 'm<sub>total</sub> = '+f(vh,2)+'×1,016 + '+f(vn,2)+'×1,042 = <b>'+f(m,1)+' g</b><br>'+
+          'C<sub>total</sub> = '+f(m,1)+'×4,184 + '+f(ccal,1)+' = <b>'+f(cTotal(m,ccal),1)+' J·K⁻¹</b><br>'+
+          'n<sub>limitante</sub> = <b>'+f(n,5).replace('.',',')+' mol</b><br>';
+  } else {
+    const mk=+$('mk').value, va=+$('va').value;
+    const m = va*RHO_AGUA25 + mk, n = mk/M_KNO3;
+    H = dHDiss(mk, va, dt, ccal); ref = REF.diss; nome = 'ΔH_diss';
+    det = 'm<sub>total</sub> = '+f(va,1)+'×0,99705 + '+f(mk,2)+' = <b>'+f(m,1)+' g</b><br>'+
+          'C<sub>total</sub> = '+f(m,1)+'×4,184 + '+f(ccal,1)+' = <b>'+f(cTotal(m,ccal),1)+' J·K⁻¹</b><br>'+
+          'n = '+f(mk,2)+'/101,1032 = <b>'+f(n,5).replace('.',',')+' mol</b><br>';
+  }
+  const dif = Math.abs(H-ref), k = dif/U_DH;
+  $('s4').innerHTML = det + nome+' = −C<sub>total</sub>·ΔT/n = <b>'+f(H)+' kJ·mol⁻¹</b>';
+  $('s5').innerHTML =
+    nome+' = <b>'+f(H)+' kJ·mol⁻¹</b>   (u = '+f(U_DH)+', k = 1)<br>'+
+    'vs. '+f(ref).replace('-','−')+' → |Δ| = <b>'+f(dif)+' kJ·mol⁻¹</b> = '+
+    '<b>'+f(k,1)+' σ</b> '+(k < 2 ? '<span class="ok">(compatível)</span>' :
+                                   '<span class="no">(acima de 2 σ — investigue)</span>')+'<br>'+
+    (modo==='neut' ? 'A <b>dispersão das referências</b> (de −55,84 a −57,30) é 1,46 kJ·mol⁻¹, '+
+      'maior que a incerteza. Diga com qual você comparou.' :
+      'O sinal POSITIVO indica processo endotérmico: a temperatura cai.');
+  $('s6').innerHTML =
+    'ΔH₁ — NaOH(s) → Na⁺(aq) + OH⁻(aq)  =  <b>−44,18 kJ·mol⁻¹</b>  (tabelado, NIST)<br>'+
+    'ΔH₂ — H⁺(aq) + OH⁻(aq) → H₂O(l)      =  <b>'+f(dH(50,50,+$('dt').value,+$('ccal').value))+
+    ' kJ·mol⁻¹</b>  (medido nesta página)<br>'+
+    'ΔH₃ = ΔH₁ + ΔH₂  =  <b>'+
+      f(-44.18 + dH(50,50,+$('dt').value,+$('ccal').value))+' kJ·mol⁻¹</b><br>'+
+    '<span class="hint">para HCl(aq) + NaOH(s) → NaCl(aq) + H₂O(l) — caminho não medido direto.</span>';
+}
+function tudo(){ desenha(); calibra(); mistura(); reacao(); }
+
+/* ── autoteste (roda DENTRO da página, sobre o mesmo código) ────────── */
+function autoteste(){
+  const casos = [];
+  const t = (nome, ok, obtido, esperado) => casos.push({nome, ok, obtido, esperado});
+  const perto = (a,b,tol) => Math.abs(a-b) <= tol;
+
+  const w = wel(6.00,1.50,60.0);
+  t('w_el = I²·R·t', perto(w,810,0.01), w, 810);
+  t('C_total = w_el/ΔT', perto(w/1.70,476.5,0.1), w/1.70, 476.5);
+  const m = mTotalHClNaOH(50,50);
+  t('m_total = 50·1,016 + 50·1,042', perto(m,102.90,0.01), m, 102.90);
+  t('C_sol = m·c', perto(m*CW,430.5,0.1), m*CW, 430.5);
+  t('C_total = m·c + C_cal', perto(cTotal(m,46.0),476.5,0.1), cTotal(m,46.0), 476.5);
+  t('ΔH_neut (ΔT = 6,00)', perto(dH(50,50,6.00,46.0),-57.18,0.01), dH(50,50,6.00,46.0), -57.18);
+  t('ΔH_neut sem correção (ΔT = 6,35)', perto(dH(50,50,6.35,46.0),-60.52,0.01),
+    dH(50,50,6.35,46.0), -60.52);
+  t('erro de quem não corrige', perto(Math.abs(dH(50,50,6.35,46.0)-dH(50,50,6.00,46.0)),3.34,0.02),
+    Math.abs(dH(50,50,6.35,46.0)-dH(50,50,6.00,46.0)), 3.34);
+  const cd = ccalMistura(50,42.0,50,24.0,32.3);
+  t('C_cal pelo método da mistura', perto(cd,35.3,0.2), cd, 35.3);
+  t('n(KNO₃) = 10,10/101,1032', perto(10.10/M_KNO3,0.09990,1e-5), 10.10/M_KNO3, 0.09990);
+  const md = 100.0*RHO_AGUA25 + 10.10;
+  t('m_total da dissolução', perto(md,109.8,0.02), md, 109.8);
+  t('C_total da dissolução', perto(cTotal(md,46.0),505.4,0.2), cTotal(md,46.0), 505.4);
+  t('ΔH_diss (ΔT = −6,90)', perto(dHDiss(10.10,100.0,-6.90,46.0),34.91,0.02),
+    dHDiss(10.10,100.0,-6.90,46.0), 34.91);
+  t('viés de c_sol = 0,98·c_w', perto(dH(50,50,6.00,46.0) - (-cTotal(m,46.0,0.98*CW)*6.00/0.05/1000),
+    -57.18 + 56.15, 0.02), dH(50,50,6.00,46.0) - (-cTotal(m,46.0,0.98*CW)*6.00/0.05/1000), -1.03);
+  t('Hess: ΔH₁ + ΔH₂', perto(-44.18 + dH(50,50,6.00,46.0), -101.36, 0.01),
+    -44.18 + dH(50,50,6.00,46.0), -101.36);
+
+  const ok = casos.filter(c=>c.ok).length;
+  let h = '<b>'+ok+'/'+casos.length+' casos aprovados</b>\n';
+  for (const c of casos){
+    h += (c.ok ? '✔ ' : '✘ ') + c.nome + '  →  ' +
+         f(c.obtido, 4) + '  (esperado ' + f(c.esperado, 4) + ')\n';
+  }
+  $('st').innerHTML = '<pre>' + h + '</pre>';
+  window.__autoteste = (ok === casos.length);
+  window.__casos = casos;
+  return ok === casos.length;
+}
+
+['leak','ccal','rh','ia','ta','dta','mq','tq','mf','tf','teq','rx','vh','vn','mk','va','dt']
+  .forEach(id => { $(id).addEventListener('input', tudo); $(id).addEventListener('change', tudo); });
+// a troca de reação ajusta o SINAL do ΔT: neutralização aquece (+), dissolução esfria (−).
+// Sem isso o painel mostraria uma dissolução exotérmica — erro conceitual grave.
+$('rx').addEventListener('change', () => {
+  $('dt').value = ($('rx').value === 'diss') ? '-6.90' : '6.00';
+  tudo();
+});
+tudo();
+autoteste();
+window.__pronto = true;
+</script>
+</body></html>

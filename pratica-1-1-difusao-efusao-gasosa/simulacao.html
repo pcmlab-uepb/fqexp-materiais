@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulação — Difusão e Efusão Gasosa (Prática 1.1)</title>
+<style>
+ :root{--bg:#0f1720;--cx:#16202b;--tx:#e8eef4;--mu:#8fa6b8;--ac:#7ab8ff;--gd:#ffd966;
+       --vd:#a5d6a7;--lr:#ffb74d;--rs:#f2a0c8;--bd:#26333f}
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--bg);color:var(--tx);
+      font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:18px}
+ h1{font-size:22px;margin:0 0 4px}
+ h2{font-size:15px;color:var(--ac);margin:22px 0 8px;text-transform:uppercase;
+    letter-spacing:.06em}
+ .sub{color:var(--mu);font-size:14px;margin-bottom:16px}
+ .grid{display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start}
+ @media(max-width:900px){.grid{grid-template-columns:1fr}}
+ .card{background:var(--cx);border:1px solid var(--bd);border-radius:12px;padding:16px}
+ label{display:block;font-size:13px;color:var(--mu);margin:12px 0 4px}
+ select,input[type=range]{width:100%}
+ select{background:#0c141c;color:var(--tx);border:1px solid var(--bd);
+        border-radius:8px;padding:8px}
+ .val{color:var(--gd);font-weight:600}
+ table{width:100%;border-collapse:collapse;font-size:14px}
+ th,td{padding:7px 9px;border-bottom:1px solid var(--bd);text-align:left}
+ th{color:var(--mu);font-weight:500;font-size:12px;text-transform:uppercase}
+ .num{text-align:right;font-variant-numeric:tabular-nums}
+ canvas{width:100%;height:270px;background:#0b131a;border-radius:10px;
+        border:1px solid var(--bd)}
+ .msg{margin-top:12px;padding:11px 13px;border-radius:9px;font-size:14px;
+      border-left:4px solid var(--ac);background:#0c141c}
+ .warn{border-left-color:var(--lr)}
+ .ok{border-left-color:var(--vd)}
+ code{background:#0c141c;padding:2px 5px;border-radius:4px;color:var(--rs);font-size:13px}
+</style></head><body>
+<h1>Difusão no tubo de Loschmidt</h1>
+<div class="sub">Prática 1.1 · Físico-Química Experimental · o modelo resolve a 2ª lei de Fick
+e compara com Chapman–Enskog</div>
+
+<div class="grid">
+ <div>
+  <div class="card">
+   <label>Par de gases</label>
+   <select id="par"></select>
+   <label>Temperatura: <span class="val" id="vT"></span></label>
+   <input type="range" id="T" min="273" max="600" value="298" step="1">
+   <label>Pressão: <span class="val" id="vp"></span></label>
+   <input type="range" id="p" min="10" max="200" value="100" step="1">
+   <label>Tempo de interdiffusão: <span class="val" id="vt"></span></label>
+   <input type="range" id="t" min="60" max="3000" value="900" step="10">
+   <label>Comprimento do tubo L (semicomprimento): <span class="val" id="vL"></span></label>
+   <input type="range" id="L" min="5" max="50" value="20" step="1">
+  </div>
+ </div>
+
+ <div>
+  <div class="card">
+   <h2 style="margin-top:0">Perfil de concentração no tubo</h2>
+   <canvas id="perfil"></canvas>
+   <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+   <h2 style="margin-top:0">O que a medida entrega</h2>
+   <table>
+    <tr><th>Grandeza</th><th class="num">Valor</th><th>Unidade</th></tr>
+    <tr><td>Coeficiente de difusão D₁₂</td><td class="num" id="rD"></td><td>m²·s⁻¹</td></tr>
+    <tr><td>Grupo adimensional D·t/L²</td><td class="num" id="rG"></td><td>—</td></tr>
+    <tr><td>Fração transferida Δc/c₀</td><td class="num" id="rF"></td><td>—</td></tr>
+    <tr><td>Massa reduzida do par</td><td class="num" id="rMu"></td><td>g·mol⁻¹</td></tr>
+    <tr><td>Diâmetro de colisão do par σ₁₂</td><td class="num" id="rS"></td><td>nm</td></tr>
+   </table>
+   <div class="msg ok" id="msg2"></div>
+  </div>
+ </div>
+</div>
+
+<script>
+const G = {"H2": {"M": 2.016, "sigma": 0.2827}, "He": {"M": 4.003, "sigma": 0.2551}, "N2": {"M": 28.014, "sigma": 0.3798}, "O2": {"M": 31.998, "sigma": 0.3467}, "Ar": {"M": 39.948, "sigma": 0.3405}, "CO2": {"M": 44.01, "sigma": 0.3941}, "Kr": {"M": 83.798, "sigma": 0.36}, "Xe": {"M": 131.29, "sigma": 0.4047}}, PARES = [["H2", "N2"], ["He", "Ar"], ["N2", "CO2"], ["H2", "CO2"], ["He", "Xe"], ["Ar", "Kr"]];
+const R = 8.314462618;               // J/(mol K)
+
+const el = id => document.getElementById(id);
+PARES.forEach(([a,b]) => {
+  const o = document.createElement("option");
+  o.value = a+"|"+b; o.textContent = a + " + " + b;
+  el("par").appendChild(o);
+});
+
+function sigma12(a,b){ return (G[a].sigma + G[b].sigma)/2; }        // nm
+function mu(a,b){ return G[a].M*G[b].M/(G[a].M+G[b].M); }           // g/mol
+
+// Chapman-Enskog com Omega = 1 (esfera rígida). D em m^2/s.
+function D_CE(a, b, T, p_Pa){
+  const m = mu(a,b)*1e-3;                 // kg/mol
+  const s = sigma12(a,b)*1e-9 * 2;        // diâmetro de colisão do par (m)
+  // ATENÇÃO: a fórmula clássica usa a densidade NUMÉRICA (moléculas/m³), não a molar.
+  // Esquecer o N_A multiplica o resultado por ~6e23 — e um teste que só confere a
+  // PROPORCIONALIDADE (D ∝ 1/p, D ∝ T^3/2) passa mesmo assim, porque o erro é um fator
+  // constante. Por isso o autoteste abaixo confere também a ORDEM DE GRANDEZA.
+  const n = p_Pa/(R*T) * 6.02214076e23;   // moléculas/m³
+  const num = (3/16)*Math.sqrt(2*Math.PI*R*T/m);
+  const den = n*Math.PI*s*s;
+  return num/den;
+}
+
+// fracao transferida: 1/2 - (4/pi^2) * sum_{k impar} k^-2 exp(-k^2 pi^2 Dt/L^2)
+function frac(D, t, Lm){
+  const x = D*t/(Lm*Lm);
+  let s = 0;
+  for(let k=1;k<=99;k+=2) s += Math.exp(-k*k*Math.PI*Math.PI*x)/(k*k);
+  return 0.5 - (4/(Math.PI*Math.PI))*s;
+}
+
+// perfil c(x) resolvido por série de cossenos (degrau inicial no centro)
+function perfil(D, t, Lm, n=140){
+  const out = [];
+  for(let i=0;i<=n;i++){
+    const x = -Lm + 2*Lm*i/n;               // -L .. +L
+    let c = 0.5;                            // metade esquerda = 1, direita = 0
+    for(let m=1;m<=41;m++){
+      const am = (m%2===1) ? 2/(m*Math.PI) : 0;
+      c += am*Math.sin(m*Math.PI*(x+Lm)/(2*Lm))
+           * Math.exp(-m*m*Math.PI*Math.PI*D*t/(4*Lm*Lm));
+    }
+    out.push([x, c]);
+  }
+  return out;
+}
+
+let cur = null;
+function atualiza(){
+  const [a,b] = el("par").value.split("|");
+  const T = +el("T").value, p_kPa = +el("p").value, t = +el("t").value, Lcm = +el("L").value;
+  el("vT").textContent = T + " K";
+  el("vp").textContent = p_kPa + " kPa";
+  el("vt").textContent = t + " s";
+  el("vL").textContent = Lcm + " cm";
+
+  const p = p_kPa*1000, Lm = Lcm/100;
+  const D = D_CE(a, b, T, p);
+  const f = frac(D, t, Lm);
+  const g = D*t/(Lm*Lm);
+
+  el("rD").textContent = D.toExponential(3);
+  el("rG").textContent = g.toExponential(3);
+  el("rF").textContent = f.toFixed(4);
+  el("rMu").textContent = mu(a,b).toFixed(3);
+  el("rS").textContent  = sigma12(a,b).toFixed(4);
+
+  // mensagem didática
+  const pesado = G[a].M > G[b].M ? a : b;
+  el("msg").innerHTML =
+     `Par <b>${a} + ${b}</b>. O gás de maior massa específica (${pesado}) vai <b>embaixo</b>. ` +
+     `A meia atmosfera (~50,7 kPa), D deve <b>dobrar</b> — confira no controle de pressão.`;
+
+  if(f > 0.99 || f < 0.01){
+    el("msg").className = "msg warn";
+    el("msg").innerHTML += ` <br><b>Atenção:</b> com este Δt a mistura já praticamente se completou (ou mal começou)
+      — a medida perde sensibilidade. Ajuste o tempo.`;
+  } else { el("msg").className = "msg"; }
+
+  el("msg2").innerHTML = `A composição depende de D e t <b>somente</b> pelo grupo <code>D·t/L²</code>.
+    Um erro sistemático em <i>t</i> é indistinguível de um erro em <i>D</i>.`;
+
+  desenha(perfil(D, t, Lm));
+}
+
+function desenha(pts){
+  const c = el("perfil"), dpr = devicePixelRatio||1;
+  const w = c.clientWidth, h = c.clientHeight;
+  c.width = w*dpr; c.height = h*dpr;
+  const x = c.getContext("2d"); x.scale(dpr,dpr);
+  x.clearRect(0,0,w,h);
+  const pa = 44, mB = 30, mT = 14;
+  const gx = v => pa + (v-(-1))/2*(w-pa-14);
+  const gy = v => mT + (1-v)*(h-mT-mB);
+
+  // eixos
+  x.strokeStyle = "#2b3947"; x.lineWidth = 1;
+  x.beginPath(); x.moveTo(pa,mT); x.lineTo(pa,h-mB); x.lineTo(w-14,h-mB); x.stroke();
+  x.fillStyle = "#8fa6b8"; x.font = "12px system-ui";
+  x.fillText("1,0", 12, gy(1)+4); x.fillText("0,5", 12, gy(.5)+4); x.fillText("0", 24, gy(0)+4);
+  x.fillText("−L", pa-4, h-10); x.fillText("centro", w/2-18, h-10); x.fillText("+L", w-34, h-10);
+  x.fillText("fração molar", 6, mT+2);
+
+  // curva
+  x.strokeStyle = "#7ab8ff"; x.lineWidth = 2.5; x.beginPath();
+  pts.forEach(([v,f2],i) => i ? x.lineTo(gx(v/Lm_glob), gy(f2)) : x.moveTo(gx(v/Lm_glob), gy(f2)));
+  x.stroke();
+}
+
+let Lm_glob = 0.2;
+const _atualiza = atualiza;
+atualiza = function(){ Lm_glob = (+el("L").value)/100; _atualiza(); };
+
+["par","T","p","t","L"].forEach(id => el(id).addEventListener("input", atualiza));
+addEventListener("resize", atualiza);
+atualiza();
+</script></body></html>

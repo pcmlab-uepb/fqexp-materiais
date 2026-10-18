@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulação — Determinações Cinéticas · Método Integral (Prática 2.1)</title>
+<style>
+  :root{--chalk:#f5f2e8;--yellow:#ffe97a;--pink:#e8a0d8;--cyan:#7fd4e8;--green:#a5d6a7;
+        --orange:#ffb74d;--ink:#16201b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:linear-gradient(160deg,#2f6e4f,#265c43 55%,#1f5540);color:var(--chalk);
+       font-family:"DejaVu Sans","Verdana",system-ui,sans-serif;line-height:1.5;padding:26px 18px 70px}
+  .wrap{max-width:1080px;margin:0 auto}
+  header{margin-bottom:20px}
+  .disc{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.45rem;margin:.25rem 0 .4rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.9rem;color:rgba(245,242,232,.75)}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.2);border-radius:16px;
+        padding:20px;margin-top:18px}
+  .card h2{font-size:1.06rem;color:var(--cyan);margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  canvas{background:rgba(15,40,30,.55);border-radius:12px;border:1px solid rgba(245,242,232,.18);
+         max-width:100%}
+  label{font-size:.85rem;color:rgba(245,242,232,.85);display:block;margin-top:10px}
+  input[type=number],select{width:130px;background:rgba(245,242,232,.08);
+        border:1.5px solid rgba(245,242,232,.3);color:var(--chalk);border-radius:8px;
+        padding:5px 8px;font:inherit;font-size:.9rem}
+  input[type=range]{width:100%;accent-color:#7fd4e8;margin-top:4px}
+  .out{font-size:.94rem;background:rgba(22,32,27,.42);border-left:5px solid var(--cyan);
+       border-radius:8px;padding:11px 13px;margin-top:12px;white-space:pre-wrap}
+  .out b{color:var(--yellow)}
+  .ok{color:var(--green)} .no{color:var(--pink)}
+  table{width:100%;border-collapse:collapse;font-size:.87rem;margin-top:10px}
+  th,td{padding:5px 7px;border-bottom:1px solid rgba(245,242,232,.14);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--yellow);font-weight:700}
+  .hint{font-size:.82rem;color:rgba(245,242,232,.62);margin-top:10px}
+  .k{color:var(--cyan);font-weight:700}
+  pre{font-size:.83rem;background:rgba(22,32,27,.5);border-radius:8px;padding:11px;overflow:auto;
+      white-space:pre-wrap}
+  #st{font-size:.9rem;color:rgba(245,242,232,.8);margin-top:10px}
+</style></head><body>
+<div class="wrap">
+  <header>
+    <div class="disc">Físico-Química Experimental · 2026.2 · UEPB/PCMLab</div>
+    <h1>Simulação — Prática 2.1: determinações cinéticas pelo método integral</h1>
+    <div class="meta">
+      Oxidação do iodeto pelo persulfato, medida pelo <b>relógio de tiossulfato + amido</b>;
+      lei integrada de pseudo-primeira ordem; teste gráfico de 1ª e de 2ª ordem; energia de
+      ativação.<br>
+      <b>Fonte de procedimento:</b> Manual20202 (apostila <i>em uso</i> da disciplina) —
+      «EXPERIMENTO Nº12: CINÉTICA QUÍMICA», Eqs. 1 a 21 e Tabela 3. O «EXPERIMENTO Nº07»
+      (método da velocidade inicial) entra como contraste na videoaula.<br>
+      Os números desta página são <b>modelos didáticos declarados</b> — não são medidas de bancada.
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>1 · O sistema</h2>
+    <p style="font-size:.93rem">Em cada frasco: 10,0 mL de KI 0,100 mol·L⁻¹ + 2,0 mL de amido +
+      <i>x</i> mL de Na₂S₂O₃ 5,00 mmol·L⁻¹ + (10−<i>x</i>) mL de água + 10,0 mL de K₂S₂O₈
+      10,0 mmol·L⁻¹. <b>V<sub>total</sub> = 32,0 mL</b>; <b>c(S₂O₈²⁻)₀ = 3,125 mmol·L⁻¹</b> e
+      <b>c(I⁻)₀ = 31,25 mmol·L⁻¹</b> em TODOS os frascos. Só o tiossulfato muda.</p>
+    <div class="grid">
+      <div>
+        <label>Temperatura da corrida: <b id="lbT">25,0 °C</b></label>
+        <input type="range" id="T" min="10" max="45" step="0.5" value="25">
+        <label>V(Na₂S₂O₃ adicionado ao frasco 1) / mL</label>
+        <input type="number" id="v1" value="1.0" step="0.5" min="0.5" max="5">
+        <label>k' a 25,0 °C / 10⁻⁴ s⁻¹ (o que o ajuste devolve)</label>
+        <input type="number" id="k25" value="1.30" step="0.01" min="0.2" max="5">
+        <label>E<sub>a</sub> do modelo / kJ·mol⁻¹</label>
+        <input type="number" id="ea" value="50.2" step="0.5" min="20" max="90">
+      </div>
+      <div class="out" id="s1"></div>
+    </div>
+    <div class="hint">O estrato de tiossulfato é que fixa a conversão: cada mol de S₂O₈²⁻ consome
+      dois de S₂O₃²⁻, logo a viragem marca c(S₂O₈²⁻)<sub>t</sub> = c₀ − ½·c(S₂O₃²⁻)₀.</div>
+  </div>
+
+  <div class="card">
+    <h2>2 · A tabela dos cinco frascos</h2>
+    <table id="tab">
+      <thead><tr><th>Frasco</th><th>V(Na₂S₂O₃) / mL</th><th>c(S₂O₃²⁻)₀ / mmol·L⁻¹</th>
+      <th>t / s</th><th>c(S₂O₈²⁻)<sub>t</sub> / mmol·L⁻¹</th><th>ln(c / mmol·L⁻¹)</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="out" id="s2"></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · O teste do método integral: ln c × t</h2>
+    <div class="grid">
+      <canvas id="g1" width="520" height="330"></canvas>
+      <div class="out" id="s3"></div>
+    </div>
+    <div class="hint">Se a reação é de 1ª ordem no persulfato, este gráfico é reta com inclinação
+      −k'. Se fosse de 2ª ordem, seria o outro gráfico que linearizaria.</div>
+  </div>
+
+  <div class="card">
+    <h2>4 · O teste de 2ª ordem: 1/c × t — e a armadilha</h2>
+    <div class="grid">
+      <canvas id="g2" width="520" height="330"></canvas>
+      <div class="out" id="s4"></div>
+    </div>
+    <div class="hint">Mova a temperatura e observe: <b>os dois R² sobem e descem juntos</b>.
+      Nesta faixa de conversão o gráfico não separa as ordens — é o achado principal da aula.</div>
+  </div>
+
+  <div class="card">
+    <h2>5 · Autoteste embutido</h2>
+    <pre id="at">rodando…</pre>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════════
+   MODELO DIDÁTICO DECLARADO
+   c0 = 3,125 mmol/L · cI0 = 31,25 mmol/L · Vit_total = 32,0 mL
+   C_S2O3 (estoque) = 5,00 mmol/L
+   c(S2O8)_t = c0 − ½·c(S2O3)0          [Manual20202, Exp 12, Eq. 21]
+   t = ln(c0/c_t) / k'(T)                [lei integrada de pseudo-primeira ordem]
+   k'(T) = k'25 · exp[−(Ea/R)(1/T − 1/298,15)]
+══════════════════════════════════════════════════════════════════════════════ */
+const C0 = 3.125;            // mmol/L
+const CI0 = 31.25;           // mmol/L
+const VTOT = 32.0;           // mL
+const CS2O3 = 5.00;          // mmol/L (estoque)
+const R = 8.314462618e-3;    // kJ mol-1 K-1
+const C_I0_MOL = CI0 / 1000; // mol/L
+
+function cS2O3_0(v){ return CS2O3 * v / VTOT; }              // mmol/L
+function cT(v){ return C0 - 0.5 * cS2O3_0(v); }              // mmol/L
+function conv(v){ return 0.5 * cS2O3_0(v) / C0; }            // fração
+function kLinha(T_C, k25, Ea){                               // s-1
+  const T = T_C + 273.15;
+  return k25 * Math.exp(-(Ea / R) * (1 / T - 1 / 298.15));
+}
+function tempo(v, T_C, k25, Ea){ return Math.log(C0 / cT(v)) / kLinha(T_C, k25, Ea); }
+
+function regressao(xs, ys){
+  const n = xs.length, mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  let sxx=0, sxy=0, syy=0;
+  for(let i=0;i<n;i++){ sxx += (xs[i]-mx)**2; sxy += (xs[i]-mx)*(ys[i]-my); syy += (ys[i]-my)**2; }
+  const b = sxy/sxx, a = my - b*mx;
+  let ssr = 0; for(let i=0;i<n;i++) ssr += (ys[i]-(a+b*xs[i]))**2;
+  return {a, b, r2: syy>0 ? 1 - ssr/syy : 0};
+}
+
+/* ── estado da interface */
+const $ = id => document.getElementById(id);
+let ultimo = null;
+
+function leEntradas(){
+  const T  = parseFloat($('T').value);
+  let v1 = parseFloat($('v1').value); if(!(v1>0)) v1 = 1.0;
+  const k25 = parseFloat($('k25').value) * 1e-4;
+  const Ea  = parseFloat($('ea').value);
+  return {T, v1, k25, Ea};
+}
+
+function series(T, k25, Ea){
+  const vs = [1,2,3,4,5];
+  const ts = vs.map(v => tempo(v, T, k25, Ea));
+  const cs = vs.map(v => cT(v));
+  const ln = cs.map(c => Math.log(c));
+  const inv = cs.map(c => 1/c);
+  return {vs, ts, cs, ln, inv};
+}
+
+function pinta(cvs, xs, ys, rotY, incl, r2, cor){
+  const g = cvs.getContext('2d'), W = cvs.width, H = cvs.height;
+  g.clearRect(0,0,W,H);
+  const L=54, Rr=14, Tt=16, B=40;
+  const xmin=0, xmax=Math.max(...xs)*1.05 || 1;
+  const ymin=Math.min(...ys), ymax=Math.max(...ys);
+  const py = Math.max((ymax-ymin)*0.15, 1e-6);
+  const y0=ymin-py, y1=ymax+py;
+  const X = x => L + (x-xmin)/(xmax-xmin)*(W-L-Rr);
+  const Y = y => (H-B) - (y-y0)/(y1-y0)*((H-B)-Tt);
+  g.strokeStyle='rgba(245,242,232,.85)'; g.lineWidth=1.6;
+  g.beginPath(); g.moveTo(L,Tt); g.lineTo(L,H-B); g.lineTo(W-Rr,H-B); g.stroke();
+  g.fillStyle='rgba(245,242,232,.85)'; g.font='11px sans-serif';
+  g.fillText(rotY, 6, Tt+10);
+  g.fillText('t / s', W-46, H-14);
+  for(let k=0;k<=4;k++){
+    const xv = xmin + k/4*(xmax-xmin);
+    g.fillText(xv.toFixed(0), X(xv)-10, H-B+15);
+  }
+  for(let k=0;k<=3;k++){
+    const yv = y0 + k/3*(y1-y0);
+    g.fillText(yv.toFixed(3).replace('.',','), 6, Y(yv)+4);
+  }
+  const a = ys.reduce((s,v)=>s+v,0)/ys.length - incl*(xs.reduce((s,v)=>s+v,0)/xs.length);
+  g.strokeStyle=cor; g.lineWidth=2;
+  g.beginPath(); g.moveTo(X(xmin), Y(a+incl*xmin)); g.lineTo(X(xmax), Y(a+incl*xmax)); g.stroke();
+  g.fillStyle='#ffd966';
+  xs.forEach((x,i)=>{ g.beginPath(); g.arc(X(x), Y(ys[i]), 4.5, 0, 2*Math.PI); g.fill(); });
+}
+
+function desenha(){
+  const {T, v1, k25, Ea} = leEntradas();
+  const s = series(T, k25, Ea);
+  ultimo = {T, v1, k25, Ea, ...s};
+
+  $('lbT').textContent = T.toFixed(1).replace('.',',') + ' °C';
+  const kp = kLinha(T, k25, Ea);
+  const k2 = kp / C_I0_MOL;
+  const t1 = s.ts[0], t5 = s.ts[4];
+  const fator = kLinha(35, k25, Ea) / kLinha(25, k25, Ea);
+  $('s1').innerHTML =
+    'c(S₂O₈²⁻)₀ = <b>3,125 mmol·L⁻¹</b>   (igual nos 5 frascos)\n' +
+    'c(I⁻)₀ = <b>31,25 mmol·L⁻¹</b>   → iodeto 10× em excesso\n' +
+    'conversão na viragem: <b>' + (100*conv(s.vs[0])).toFixed(2).replace('.',',') + ' %</b> a <b>' +
+    (100*conv(5)).toFixed(2).replace('.',',') + ' %</b>\n' +
+    'k\'(T) = <b>' + (kp*1e4).toFixed(2).replace('.',',') + '×10⁻⁴ s⁻¹</b>' +
+    '   ·   k = k\'/c(I⁻)₀ = <b>' + k2.toExponential(2).replace('.',',') + ' mol⁻¹·L·s⁻¹</b>\n' +
+    'subir 10 °C (25→35 °C) multiplica k por <b>' + fator.toFixed(2).replace('.',',') + '</b>';
+
+  let th = '';
+  s.vs.forEach((v,i)=>{
+    th += '<tr><td>' + v + '</td><td>' + v.toFixed(1).replace('.',',') + '</td><td>' +
+      cS2O3_0(v).toFixed(3).replace('.',',') + '</td><td>' + s.ts[i].toFixed(0) + '</td><td>' +
+      s.cs[i].toFixed(3).replace('.',',') + '</td><td>' + s.ln[i].toFixed(3).replace('.',',') +
+      '</td></tr>';
+  });
+  $('tab').querySelector('tbody').innerHTML = th;
+  $('s2').innerHTML =
+    't do frasco 1 (`' + s.vs[0].toFixed(1).replace('.',',') + '` mL de S₂O₃²⁻): <b>' +
+    t1.toFixed(0) + ' s</b>   ·   t do frasco 5: <b>' + t5.toFixed(0) + ' s</b>\n' +
+    'meia-vida da pseudo-primeira ordem: ln2/k\' = <b>' +
+    (Math.log(2)/kp).toFixed(0) + ' s ≈ ' + (Math.log(2)/kp/60).toFixed(0) + ' min</b>\n' +
+    'a corrida inteira vê apenas os primeiros <b>' +
+    (100*conv(5)).toFixed(1).replace('.',',') + ' %</b> da reação';
+
+  const r1 = regressao(s.ts, s.ln);
+  const r2 = regressao(s.ts, s.inv);
+  pinta($('g1'), s.ts, s.ln, 'ln(c/mmol·L⁻¹)', r1.b, r1.r2, '#7fd4e8');
+  pinta($('g2'), s.ts, s.inv, '1/(c/mmol·L⁻¹)', r2.b, r2.r2, '#e8a0d8');
+  const kAjust = -r1.b;
+  $('s3').innerHTML =
+    'inclinação do ajuste: <b>' + r1.b.toExponential(3).replace('.',',') + '</b>\n' +
+    'k\' (pseudo-primeira ordem) = <b>' + (kAjust*1e4).toFixed(2).replace('.',',') +
+    '×10⁻⁴ s⁻¹</b>\n' +
+    'k = k\'/c(I⁻)₀ = <b>' + (kAjust/C_I0_MOL).toExponential(2).replace('.',',') +
+    ' mol⁻¹·L·s⁻¹</b>\n' +
+    'R² (ln c × t) = <b>' + r1.r2.toFixed(5).replace('.',',') + '</b>';
+  $('s4').innerHTML =
+    'R² (1/c × t) = <b>' + r2.r2.toFixed(5).replace('.',',') + '</b>\n' +
+    'R² (ln c × t) = <b>' + r1.r2.toFixed(5).replace('.',',') + '</b>\n' +
+    'diferença entre os R² = <b>' + Math.abs(r1.r2-r2.r2).toExponential(1).replace('.',',') +
+    '</b>\n' +
+    '→ os dois linearizam <b>igualmente bem</b>: o R² NÃO decide a ordem aqui.'
+  ;
+}
+
+/* ═══════════════════════ AUTOTESTE — roda DENTRO da página, sobre o mesmo código */
+function autoteste(){
+  const casos = [];
+  const t = (nome, ok, info) => casos.push({nome, ok: !!ok, info: info||''});
+
+  // 1 · as concentrações iniciais não dependem do frasco
+  t('c0 = 3,125 mmol/L em todos os frascos',
+    [1,2,3,4,5].every(v => Math.abs(cT(v) - 3.125 + 0.5*cS2O3_0(v)) < 1e-12));
+  // 2 · Δc = ½ c(S2O3)0
+  t('Δc de persulfato = ½·c(S₂O₃²⁻)₀',
+    [1,2,3,4,5].every(v => Math.abs((C0-cT(v)) - 0.5*cS2O3_0(v)) < 1e-12));
+  // 3 · conversão máxima 12,5 % com 5 mL
+  t('conversão máxima = 12,5 %', Math.abs(conv(5)-0.125) < 1e-12, (100*conv(5)).toFixed(2)+' %');
+  t('conversão mínima = 2,5 % com 1 mL', Math.abs(conv(1)-0.025) < 1e-12);
+  // 4 · k'(25 °C) reproduz o valor informado
+  const kp25 = kLinha(25, 1.30e-4, 50.2);
+  t('k\'(25 °C) = 1,30×10⁻⁴ s⁻¹', Math.abs(kp25 - 1.30e-4)/1.30e-4 < 1e-9, kp25.toExponential(3));
+  // 5 · Arrhenius: 10 °C a mais quase dobra
+  const f = kLinha(35,1.30e-4,50.2)/kLinha(25,1.30e-4,50.2);
+  t('k\'(35 °C)/k\'(25 °C) entre 1,8 e 2,1', f>1.8 && f<2.1, f.toFixed(3));
+  // 6 · t ∝ 1/k'
+  const ta = tempo(3,25,1.30e-4,50.2), tb = tempo(3,25,2.60e-4,50.2);
+  t('dobrar k\' pela metade do tempo', Math.abs(tb - ta/2)/(ta/2) < 1e-9);
+  // 7 · t cresce com V(S2O3)
+  const ts = [1,2,3,4,5].map(v => tempo(v,25,1.30e-4,50.2));
+  t('t cresce monotonicamente com V(S₂O₃²⁻)',
+    ts.every((x,i)=> i===0 || x > ts[i-1]), ts.map(x=>x.toFixed(0)).join(' < '));
+  // 8 · todos os tempos > 0
+  t('todos os tempos positivos', ts.every(x => x > 0));
+  // 9 · o ajuste de ln c × t recupera k' (dentro de 2 %)
+  const s25 = series(25, 1.30e-4, 50.2);
+  const r1 = regressao(s25.ts, s25.ln);
+  t('ajuste recupera k\' a 2 %', Math.abs(-r1.b - kLinha(25,1.30e-4,50.2))/kLinha(25,1.30e-4,50.2) < 0.02,
+    (-r1.b*1e4).toFixed(3)+'e-4');
+  // 10 · R²(ln) > 0,9999 para dados de 1ª ordem
+  t('R²(ln c × t) > 0,9999', r1.r2 > 0.9999, r1.r2.toFixed(6));
+  // 11 · A ARMADILHA: o teste de 2ª ordem também dá R² > 0,999
+  const r2 = regressao(s25.ts, s25.inv);
+  t('R²(1/c × t) TAMBÉM > 0,999 (a armadilha)', r2.r2 > 0.999, r2.r2.toFixed(6));
+  // 12 · e os dois R² diferem menos de 0,01
+  t('|ΔR²| < 0,01 — o gráfico não decide', Math.abs(r1.r2 - r2.r2) < 0.01,
+    Math.abs(r1.r2-r2.r2).toExponential(2));
+  // 13 · k = k'/c(I-)0
+  const kk = kLinha(25,1.30e-4,50.2)/C_I0_MOL;
+  t('k = k\'/c(I⁻)₀ (divisão, não produto)', Math.abs(kk - 1.30e-4/0.03125) < 1e-12,
+    kk.toExponential(3));
+  t('k ≠ k\' · c(I⁻)₀ (erro de multiplicar)', Math.abs(kk - 1.30e-4*0.03125) > 1e-6);
+  // 14 · ln c diminui com t, 1/c aumenta com t
+  t('ln c decresce e 1/c cresce com t',
+    s25.ln.every((x,i)=> i===0 || x < s25.ln[i-1]) &&
+    s25.inv.every((x,i)=> i===0 || x > s25.inv[i-1]));
+  // 15 · c_t nunca supera c0 nem fica negativa
+  t('c(S₂O₈²⁻)_t sempre em (0, c0)',
+    [1,2,3,4,5].every(v => cT(v) > 0 && cT(v) < C0));
+
+  const ok = casos.filter(c => c.ok).length;
+  const linhas = casos.map((c,i) =>
+    (c.ok ? '  PASS ' : '  FAIL ') + String(i+1).padStart(2,'0') + ' · ' + c.nome +
+    (c.info ? '   [' + c.info + ']' : '')).join('\n');
+  $('at').innerHTML = casos.length + ' casos · ' + ok + ' aprovados · ' +
+    (casos.length-ok) + ' falharam\n' + linhas;
+  window.__casos = casos;
+  window.__autoteste = (ok === casos.length);
+  return window.__autoteste;
+}
+
+window.__pronto = false;
+(function init(){
+  ['T','v1','k25','ea'].forEach(id => $(id).addEventListener('input', desenha));
+  desenha();
+  autoteste();
+  window.__pronto = true;
+})();
+</script></body></html>

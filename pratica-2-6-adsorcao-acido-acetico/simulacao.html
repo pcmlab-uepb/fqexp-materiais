@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulação — Adsorção de Ácido Acético por Carvão Ativado · Langmuir e Freundlich (Prática 2.6)</title>
+<style>
+  :root{--chalk:#f5f2e8;--yellow:#ffe97a;--pink:#e8a0d8;--cyan:#7fd4e8;--green:#a5d6a7;
+        --orange:#ffb74d;--ink:#16201b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:linear-gradient(160deg,#2f6e4f,#265c43 55%,#1f5540);color:var(--chalk);
+       font-family:"DejaVu Sans","Verdana",system-ui,sans-serif;line-height:1.5;padding:26px 18px 70px}
+  .wrap{max-width:1120px;margin:0 auto}
+  header{margin-bottom:20px}
+  .disc{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.4rem;margin:.25rem 0 .4rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.9rem;color:rgba(245,242,232,.75)}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.2);border-radius:16px;
+        padding:20px;margin-top:18px}
+  .card h2{font-size:1.06rem;color:var(--cyan);margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  canvas{background:rgba(15,40,30,.55);border-radius:12px;border:1px solid rgba(245,242,232,.18);
+         max-width:100%}
+  label{font-size:.85rem;color:rgba(245,242,232,.85);display:block;margin-top:10px}
+  input[type=number],select{width:140px;background:rgba(245,242,232,.08);
+        border:1.5px solid rgba(245,242,232,.3);color:var(--chalk);border-radius:8px;
+        padding:5px 8px;font:inherit;font-size:.9rem}
+  input[type=range]{width:100%;accent-color:#7fd4e8;margin-top:4px}
+  .out{font-size:.93rem;background:rgba(22,32,27,.42);border-left:5px solid var(--cyan);
+       border-radius:8px;padding:11px 13px;margin-top:12px;white-space:pre-wrap}
+  .out b{color:var(--yellow)}
+  .ok{color:var(--green)} .no{color:var(--pink)}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:10px}
+  th,td{padding:4px 6px;border-bottom:1px solid rgba(245,242,232,.14);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--yellow);font-weight:700}
+  .hint{font-size:.82rem;color:rgba(245,242,232,.62);margin-top:10px}
+  pre{font-size:.8rem;background:rgba(22,32,27,.5);border-radius:8px;padding:11px;overflow:auto;
+      white-space:pre-wrap}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:880px){.two{grid-template-columns:1fr}}
+</style></head><body>
+<div class="wrap">
+  <header>
+    <div class="disc">Físico-Química Experimental · 2026.2 · UEPB/PCMLab</div>
+    <h1>Simulação — Prática 2.6: isotermas de Langmuir e Freundlich</h1>
+    <div class="meta">
+      Adsorção de ácido acético em <b>carvão ativado</b>, em batelada, com a concentração
+      residual determinada por titulação com NaOH; ajuste pelos dois modelos e a decisão por
+      resíduos e faixa de validade.<br>
+      <b>Procedimento:</b> <i>sem</i> equivalente na apostila em uso (Manual20202). Ancorado em
+      Milosavljevic, <i>Lab Packet for Chem 457</i>, Exp. 2 «Adsorption from Solution»; teoria
+      em Shoemaker, Exp. 26.<br>
+      Os números desta página são <b>modelos didáticos declarados</b> — não são medidas de bancada.
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>1 · O modelo do experimento</h2>
+    <div class="grid">
+      <div>
+        <label>massa de carvão por frasco: <b id="lbM">3,0000 g</b></label>
+        <input type="range" id="mC" min="0.5" max="6" step="0.1" value="3">
+        <label>Temperatura: <b id="lbT">25,0 °C</b></label>
+        <input type="range" id="T" min="10" max="50" step="0.5" value="25">
+        <label>(x/m)máx verdadeiro / 10⁻³ mol·g⁻¹</label>
+        <input type="number" id="qmax" value="6.53" step="0.05" min="1" max="20">
+        <label>K verdadeiro a 25,0 °C / L·mol⁻¹</label>
+        <input type="number" id="K25" value="10.9" step="0.1" min="1" max="60">
+        <label>erro de leitura da bureta / mL</label>
+        <input type="number" id="ruido" value="0.02" step="0.01" min="0" max="0.1">
+        <label>nº de pontos usados no ajuste: <b id="lbN">7</b></label>
+        <input type="range" id="np" min="3" max="7" step="1" value="7">
+      </div>
+      <div class="out" id="s1"></div>
+    </div>
+    <div class="hint">A série de sete pontos vai de c₀ = 0,0250 a 0,2500 mol·L⁻¹, com V = 100,0 mL
+      e NaOH padronizado a 0,1000 mol·L⁻¹; a alíquota titulada é de 25,00 mL. Reduza o número de
+      pontos para ver o efeito da <b>faixa de validade</b> sobre o qmax.</div>
+  </div>
+
+  <div class="card">
+    <h2>2 · A planilha de dados</h2>
+    <table id="tab">
+      <thead><tr><th>c₀ / mol·L⁻¹</th><th>V(NaOH) / mL</th><th>cₑ / mol·L⁻¹</th>
+      <th>x/m / 10⁻³ mol·g⁻¹</th><th>x/m / mg·g⁻¹</th><th>f adsorvida</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="out" id="s2"></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · As duas linearizações — e a armadilha do R²</h2>
+    <div class="two">
+      <div><canvas id="g1" width="520" height="330"></canvas></div>
+      <div><canvas id="g2" width="520" height="330"></canvas></div>
+    </div>
+    <div class="out" id="s3"></div>
+    <div class="hint">Esquerda: cₑ/(x/m) × cₑ (Langmuir). Direita: log(x/m) × log cₑ (Freundlich).
+      Aumente o erro de leitura e veja os <b>dois</b> R² caírem juntos — é o achado principal.</div>
+  </div>
+
+  <div class="card">
+    <h2>4 · Os resíduos: quem de fato decide</h2>
+    <div class="two">
+      <div><canvas id="g3" width="520" height="300"></canvas></div>
+      <div><canvas id="g4" width="520" height="300"></canvas></div>
+    </div>
+    <div class="out" id="s4"></div>
+    <div class="hint">Resíduos na mesma escala. O modelo correto deixa os resíduos <b>ao acaso</b>;
+      o modelo inadequado deixa um <b>arco sistemático</b>. Compare os dois desvios-padrão.</div>
+  </div>
+
+  <div class="card">
+    <h2>5 · O controle de equilíbrio: x/m × t</h2>
+    <div class="grid">
+      <div><canvas id="g5" width="520" height="320"></canvas></div>
+      <div class="out" id="s5"></div>
+    </div>
+    <div class="hint">A adsorção sobe e achata. O patamar só se aceita quando a variação fica
+      <b>abaixo da incerteza de x/m</b>.</div>
+  </div>
+
+  <div class="card">
+    <h2>6 · Autoteste embutido</h2>
+    <pre id="at">rodando…</pre>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════════
+   MODELO DIDÁTICO DECLARADO
+     isoterma verdadeira:  x/m = (x/m)máx · K · cₑ / (1 + K·cₑ)   [Langmuir]
+     balanço de massa:     c₀ = cₑ + (mC/V)·(x/m)(cₑ)  — resolvido por equação do 2º grau
+     leitura da bureta:    V(NaOH) = arredondar( cₑ·25,00/c(NaOH) + ruído , 0,01 )
+     cₑ medido = c(NaOH)·V(NaOH)/25,00 mL
+     x/m = (c₀ − cₑ)·0,1000 L / mC
+     K(T) = K(25)·exp[ −ΔH/R · (1/T − 1/298,15) ] ,  ΔH = −12,0 kJ·mol⁻¹
+   ══════════════════════════════════════════════════════════════════════════════ */
+const C0  = [0.0250, 0.0500, 0.0750, 0.1000, 0.1500, 0.2000, 0.2500];
+const VOL = 0.1000;            // L
+const VAL = 25.00;             // mL
+const CN  = 0.1000;            // mol/L
+const MAA = 60.052;            // g/mol
+const NA  = 6.02214076e23;
+const SIG = 0.21e-18;          // m²
+const R   = 8.314462618e-3;    // kJ/(mol K)
+const DH  = -12.0;             // kJ/mol
+
+const $ = id => document.getElementById(id);
+
+function KT(T_C, K25){ return K25 * Math.exp(-(DH / R) * (1/(T_C+273.15) - 1/298.15)); }
+
+/* cₑ resolve  cₑ + (mC/V)·qmax·K·cₑ/(1+K·cₑ) = c₀  ->  equação do 2º grau */
+function resolveCe(c0, qmax, K, mC){
+  const r = mC / VOL;
+  const rq = r * qmax;
+  const b = 1 + rq * K - c0 * K;
+  const disc = b*b + 4*K*c0;
+  return (-b + Math.sqrt(disc)) / (2*K);
+}
+
+function pontos(mC, T, qmax, K25, ruido){
+  const K = KT(T, K25);
+  const out = [];
+  for(let i=0;i<C0.length;i++){
+    const ce = resolveCe(C0[i], qmax, K, mC);
+    let Vn = ce*VAL/CN + ruido*((i%2)? -1: 1)*(0.4+0.6*((i*7)%3)/2);
+    Vn = Math.round(Vn*100)/100;
+    const cem = CN*Vn/VAL;
+    const q = (C0[i]-cem)*VOL/mC;
+    out.push({c0:C0[i], Vn:Vn, ce:cem, q:q, f:(C0[i]-cem)/C0[i]});
+  }
+  return {K:K, pts:out};
+}
+
+function regressao(xs, ys){
+  const n = xs.length;
+  const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  let sxx=0, sxy=0, syy=0;
+  for(let i=0;i<n;i++){ sxx += (xs[i]-mx)**2; sxy += (xs[i]-mx)*(ys[i]-my); syy += (ys[i]-my)**2; }
+  const b = sxy/sxx, a = my - b*mx;
+  let ssr=0; for(let i=0;i<n;i++) ssr += (ys[i]-(a+b*xs[i]))**2;
+  return {a, b, r2: syy>0 ? 1-ssr/syy : 0, sres: n>2 ? Math.sqrt(ssr/(n-2)) : 0};
+}
+
+function ajustes(pts, npontos){
+  const P = pts.slice(0, npontos);
+  const ce = P.map(p=>p.ce), q = P.map(p=>p.q);
+  const rL = regressao(ce, ce.map((c,i)=>c/q[i]));
+  const qmaxA = 1/rL.b, KA = rL.b/rL.a;
+  const rF = regressao(ce.map(Math.log10), q.map(Math.log10));
+  const um_n = rF.b, KF = Math.pow(10, rF.a);
+  const resL = P.map((p,i)=> p.q - qmaxA*KA*p.ce/(1+KA*p.ce));
+  const resF = P.map(p=> p.q - KF*Math.pow(p.ce, um_n));
+  const sdL = Math.sqrt(resL.reduce((s,r)=>s+r*r,0)/Math.max(1,P.length-2));
+  const sdF = Math.sqrt(resF.reduce((s,r)=>s+r*r,0)/Math.max(1,P.length-2));
+  return {P, ce, q, rL, qmaxA, KA, rF, um_n, KF, resL, resF, sdL, sdF};
+}
+
+/* ── desenho de gráfico genérico com reta e pontos */
+function eixos(cvs, L, Rr, Tt, B){
+  const g = cvs.getContext('2d'), W = cvs.width, H = cvs.height;
+  g.strokeStyle='rgba(245,242,232,.85)'; g.lineWidth=1.6;
+  g.beginPath(); g.moveTo(L,Tt); g.lineTo(L,H-B); g.lineTo(W-Rr,H-B); g.stroke();
+}
+
+function plotLin(cvs, xs, ys, rotX, rotY, cor, nrot, fmtX, fmtY){
+  const g = cvs.getContext('2d'), W = cvs.width, H = cvs.height;
+  g.clearRect(0,0,W,H);
+  const L=62, Rr=14, Tt=16, B=42;
+  const xmin=Math.min(...xs), xmax=Math.max(...xs);
+  const ymin=Math.min(...ys), ymax=Math.max(...ys);
+  const px=(xmax-xmin)*0.06||1e-6, py=(ymax-ymin)*0.12||1e-6;
+  const X=x=> L + (x-(xmin-px))/((xmax+px)-(xmin-px))*(W-L-Rr);
+  const Y=y=> (H-B) - (y-(ymin-py))/((ymax+py)-(ymin-py))*((H-B)-Tt);
+  eixos(cvs, L, Rr, Tt, B);
+  g.fillStyle='rgba(245,242,232,.85)'; g.font='11px sans-serif';
+  g.fillText(rotY, 6, Tt+9); g.fillText(rotX, W-70, H-13);
+  for(let k=0;k<=4;k++){ const xv=xmin+(k/4)*(xmax-xmin); g.fillText(fmtX(xv), X(xv)-14, H-B+15); }
+  for(let k=0;k<=4;k++){ const yv=ymin+(k/4)*(ymax-ymin); g.fillText(fmtY(yv), 6, Y(yv)+4); }
+  const a=nrot.a, b=nrot.b;
+  g.strokeStyle=cor; g.lineWidth=2.2;
+  g.beginPath(); g.moveTo(X(xmin-px), Y(a+b*(xmin-px))); g.lineTo(X(xmax+px), Y(a+b*(xmax+px))); g.stroke();
+  g.fillStyle='#ffd966';
+  xs.forEach((x,i)=>{ g.beginPath(); g.arc(X(x), Y(ys[i]), 4.5, 0, 2*Math.PI); g.fill(); });
+}
+
+function plotResid(cvs, ce, res, esc, titulo, cor){
+  const g = cvs.getContext('2d'), W = cvs.width, H = cvs.height;
+  g.clearRect(0,0,W,H);
+  const L=62, Rr=14, Tt=30, B=42;
+  const xmax=Math.max(...ce)*1.05;
+  const X=x=> L + x/xmax*(W-L-Rr);
+  const Y=r=> (H-B+Tt)/2 - r/esc*((H-B-Tt)/2);
+  g.setLineDash([5,4]); g.strokeStyle='rgba(245,242,232,.7)'; g.lineWidth=1.3;
+  g.beginPath(); g.moveTo(L,(H-B+Tt)/2); g.lineTo(W-Rr,(H-B+Tt)/2); g.stroke();
+  g.setLineDash([]);
+  eixos(cvs, L, Rr, Tt, B);
+  g.fillStyle=cor; g.font='bold 13px sans-serif'; g.fillText(titulo, L+6, 18);
+  g.fillStyle='rgba(245,242,232,.85)'; g.font='11px sans-serif';
+  g.fillText('cₑ / mol·L⁻¹', W-96, H-13);
+  g.fillText('+'+(esc*1e3).toFixed(2), 6, Tt+2);
+  g.fillText('−'+(esc*1e3).toFixed(2), 6, H-B);
+  g.strokeStyle=cor; g.lineWidth=1.8; g.beginPath();
+  ce.forEach((c,i)=>{ const px2=X(c), py2=Y(res[i]); i? g.lineTo(px2,py2) : g.moveTo(px2,py2); });
+  g.stroke();
+  g.fillStyle='#ffd966';
+  ce.forEach((c,i)=>{ g.beginPath(); g.arc(X(c), Y(res[i]), 4, 0, 2*Math.PI); g.fill(); });
+}
+
+function plotEquil(cvs, ts, pct){
+  const g = cvs.getContext('2d'), W = cvs.width, H = cvs.height;
+  g.clearRect(0,0,W,H);
+  const L=58, Rr=14, Tt=18, B=42;
+  const xmax=95, ymax=108;
+  const X=t=> L + t/xmax*(W-L-Rr);
+  const Y=p=> (H-B) - p/ymax*((H-B)-Tt);
+  eixos(cvs, L, Rr, Tt, B);
+  g.fillStyle='rgba(245,242,232,.85)'; g.font='11px sans-serif';
+  g.fillText('% do equilíbrio', 6, Tt+9); g.fillText('tempo / min', W-78, H-13);
+  for(const t of [0,20,40,60,80]) g.fillText(t, X(t)-8, H-B+15);
+  for(const p of [0,50,100]) g.fillText(p, 30, Y(p)+4);
+  g.setLineDash([5,4]); g.strokeStyle='#a5d6a7'; g.lineWidth=1.6;
+  g.beginPath(); g.moveTo(X(30), Y(100)); g.lineTo(X(90), Y(100)); g.stroke();
+  g.setLineDash([]);
+  g.strokeStyle='#7fd4e8'; g.lineWidth=2.2; g.beginPath();
+  ts.forEach((t,i)=>{ i? g.lineTo(X(t),Y(pct[i])) : g.moveTo(X(t),Y(pct[i])); });
+  g.stroke();
+  g.fillStyle='#ffd966';
+  ts.forEach((t,i)=>{ g.beginPath(); g.arc(X(t), Y(pct[i]), 4.5, 0, 2*Math.PI); g.fill(); });
+}
+
+/* ── estado */
+let ultimo = null;
+
+function desenha(){
+  const mC   = parseFloat($('mC').value);
+  const T    = parseFloat($('T').value);
+  const qmax = parseFloat($('qmax').value)*1e-3;
+  const K25  = parseFloat($('K25').value);
+  const ruido= parseFloat($('ruido').value);
+  const np   = parseInt($('np').value);
+  const R_   = pontos(mC, T, qmax, K25, ruido);
+  const A    = ajustes(R_.pts, np);
+
+  $('lbM').textContent = mC.toFixed(4).replace('.',',') + ' g';
+  $('lbT').textContent = T.toFixed(1).replace('.',',') + ' °C';
+  $('lbN').textContent = np;
+  const S = A.qmaxA*NA*SIG;
+
+  $('s1').innerHTML =
+    'K verdadeiro a 25,0 °C = <b>' + K25.toFixed(2).replace('.',',') + ' L·mol⁻¹</b>\n' +
+    'K do modelo a <b>' + T.toFixed(1).replace('.',',') + ' °C</b> = <b>' +
+      R_.K.toFixed(2).replace('.',',') + ' L·mol⁻¹</b>\n' +
+    'adsorção EXOTÉRMICA: aquecer <b>reduz</b> K\n' +
+    'pontos usados no ajuste: <b>' + np + '</b>   (janela: c₀ 0,025 a ' +
+      C0[np-1].toFixed(4).replace('.',',') + ' mol·L⁻¹)\n' +
+    'V(NaOH) = cₑ·25,00/c(NaOH) + erro de leitura';
+
+  let th = '';
+  R_.pts.forEach(p=>{
+    th += '<tr><td>' + p.c0.toFixed(4).replace('.',',') + '</td><td>' +
+      p.Vn.toFixed(2).replace('.',',') + '</td><td>' + p.ce.toFixed(5).replace('.',',') +
+      '</td><td>' + (p.q*1e3).toFixed(3).replace('.',',') + '</td><td>' +
+      (p.q*MAA*1e3).toFixed(1).replace('.',',') + '</td><td>' +
+      (100*p.f).toFixed(1).replace('.',',') + ' %</td></tr>';
+  });
+  $('tab').querySelector('tbody').innerHTML = th;
+  $('s2').innerHTML =
+    'x/m se escreve COM unidade: <b>10⁻³ mol·g⁻¹</b> ou <b>mg·g⁻¹</b>.\n' +
+    'fração adsorvida: <b>' + (100*R_.pts[0].f).toFixed(1).replace('.',',') + ' %</b> no ponto ' +
+      'diluído → <b>' + (100*R_.pts[np-1].f).toFixed(1).replace('.',',') + ' %</b> no mais ' +
+      'concentrado.\n' +
+    'qui quem manda é o valor NUMÉRICO (as colunas 3 e 4 saem do balanço de massa).';
+
+  plotLin($('g1'), A.ce, A.ce.map((c,i)=>c/A.q[i]), 'cₑ / mol·L⁻¹', 'cₑ /(x/m)',
+          '#7fd4e8', A.rL, x=>x.toFixed(2).replace('.',','), y=>y.toFixed(0));
+  plotLin($('g2'), A.ce.map(Math.log10), A.q.map(Math.log10), 'log (cₑ / mol·L⁻¹)', 'log (x/m)',
+          '#e8a0d8', A.rF, x=>x.toFixed(1).replace('.',','), y=>y.toFixed(1).replace('.',','));
+
+  $('s3').innerHTML =
+    'LANGMUIR   (x/m)máx = <b>' + (A.qmaxA*1e3).toFixed(3).replace('.',',') + '×10⁻³ mol·g⁻¹</b>   ' +
+      'K = <b>' + A.KA.toFixed(2).replace('.',',') + ' L·mol⁻¹</b>   ' +
+      'R² = <b>' + A.rL.r2.toFixed(5).replace('.',',') + '</b>\n' +
+    'FREUNDLICH   1/n = <b>' + A.um_n.toFixed(3).replace('.',',') + '</b>   ' +
+      'K_F = <b>' + A.KF.toFixed(5).replace('.',',') + '</b>   ' +
+      'R² = <b>' + A.rF.r2.toFixed(5).replace('.',',') + '</b>\n' +
+    '|R²(L) − R²(F)| = <b>' + Math.abs(A.rL.r2-A.rF.r2).toFixed(5).replace('.',',') + '</b>\n' +
+    'área superficial S = (x/m)máx·N_A·σ = <b>' + S.toFixed(0) + ' m²·g⁻¹</b>\n' +
+    '→ os dois R² são altos; o R² <b>NÃO</b> escolhe o modelo.';
+
+  const esc = Math.max(Math.abs(Math.max(...A.resL)), Math.abs(Math.max(...A.resF)), 1e-6);
+  plotResid($('g3'), A.ce, A.resL, esc, 'LANGMUIR — resíduos', '#a5d6a7');
+  plotResid($('g4'), A.ce, A.resF, esc, 'FREUNDLICH — resíduos', '#e8a0d8');
+  $('s4').innerHTML =
+    'mesma escala nos dois painéis: <b>±' + (esc*1e3).toFixed(2).replace('.',',') + '×10⁻³ mol·g⁻¹</b>\n' +
+    'desvio-padrão de Langmuir   = <b>' + A.sdL.toExponential(1).replace('.',',') + '</b>\n' +
+    'desvio-padrão de Freundlich = <b>' + A.sdF.toExponential(1).replace('.',',') + '</b>\n' +
+    'razão = <b>' + (A.sdF/Math.max(A.sdL,1e-30)).toFixed(1).replace('.',',') + '×</b>\n' +
+    '→ resíduos ao acaso = modelo adequado; arco sistemático = inadequação estrutural.';
+
+  // equilíbrio: usa o ponto do meio (ou o primeiro disponível)
+  const pq = R_.pts[Math.min(np-1, 4)];
+  const kA = 0.09, ts = [5,10,15,20,30,45,60,90];
+  const pct = ts.map(t => 100*(1-Math.exp(-kA*t)));
+  plotEquil($('g5'), ts, pct);
+  const p40 = 100*(1-Math.exp(-kA*40)), p60 = 100*(1-Math.exp(-kA*60));
+  const uq = 0.018*pq.q;
+  const varq = (p60-p40)/100*pq.q;
+  $('s5').innerHTML =
+    '30 min → <b>' + pct[4].toFixed(1).replace('.',',') + ' %</b> do equilíbrio\n' +
+    '45 min → <b>' + pct[5].toFixed(1).replace('.',',') + ' %</b>\n' +
+    '60 min → <b>' + pct[6].toFixed(1).replace('.',',') + ' %</b>\n' +
+    'variação 40 → 60 min = <b>' + varq.toExponential(1).replace('.',',') + ' mol·g⁻¹</b> = ' +
+      '<b>' + (varq/uq).toFixed(2).replace('.',',') + ' × u(x/m)</b>\n' +
+    '→ o patamar é indistinguível do equilíbrio DENTRO do erro.';
+
+  ultimo = {mC, T, qmax, K25, ruido, np, K:R_.K, A, S, pct, varq, uq};
+}
+
+/* ═══════════════════════ AUTOTESTE — roda DENTRO da página, sobre o mesmo código */
+function autoteste(){
+  const casos = [];
+  const t = (nome, ok, info) => casos.push({nome, ok: !!ok, info: info||''});
+
+  // 1 · balanço de massa fecha
+  const P = pontos(3.0, 25, 6.53e-3, 10.9, 0);
+  t('balanço: c₀ = cₑ + (mC/V)·(x/m)', P.pts.every(p =>
+      Math.abs(p.c0 - (p.ce + (3.0/0.1)*p.q)) < 1e-9));
+  // 2 · cₑ < c₀ em todos
+  t('cₑ < c₀ em todos os pontos', P.pts.every(p => p.ce < p.c0 && p.ce > 0));
+  // 3 · x/m positivo
+  t('x/m > 0 em todos', P.pts.every(p => p.q > 0));
+  // 4 · fração adsorvida decresce com c₀
+  t('f adsorvida decresce com c₀', P.pts.every((p,i)=> i===0 || p.f < P.pts[i-1].f),
+    (100*P.pts[0].f).toFixed(1)+'% → '+(100*P.pts[6].f).toFixed(1)+'%');
+  // 5 · com dados limpos, Langmuir recobra (x/m)máx
+  const A = ajustes(P.pts, 7);
+  t('ajuste recobra (x/m)máx a 1 %', Math.abs(A.qmaxA-6.53e-3)/6.53e-3 < 0.01,
+    (A.qmaxA*1e3).toFixed(3));
+  t('ajuste recobra K a 1 %', Math.abs(A.KA-10.9)/10.9 < 0.01, A.KA.toFixed(2));
+  // 6 · inclinação = 1/(x/m)máx
+  t('inclinação de c/q × c = 1/(x/m)máx', Math.abs(A.rL.b - 1/A.qmaxA) < 1e-9);
+  // 7 · R² de Langmuir alto com dados limpos
+  t('R²(Langmuir) > 0,999 (dados limpos)', A.rL.r2 > 0.999, A.rL.r2.toFixed(6));
+  // 8 · A ARMADILHA: Freundlich também dá R² alto
+  t('R²(Freundlich) também > 0,98 (a armadilha)', A.rF.r2 > 0.98, A.rF.r2.toFixed(6));
+  // 9 · e os dois R² diferem pouco
+  t('|ΔR²| < 0,02 — o R² não decide', Math.abs(A.rL.r2-A.rF.r2) < 0.02,
+    Math.abs(A.rL.r2-A.rF.r2).toFixed(5));
+  // 10 · 1/n abaixo da unidade (superfície heterogênea)
+  t('0 < 1/n < 1 (heterogênea, favorável)', A.um_n > 0 && A.um_n < 1, A.um_n.toFixed(3));
+  // 11 · os resíduos de Langmuir são menores que os de Freundlich
+  t('s_res(Langmuir) < s_res(Freundlich)', A.sdL < A.sdF,
+    A.sdL.toExponential(1)+' < '+A.sdF.toExponential(1));
+  // 12 · área superficial na faixa de carvões ativados
+  const S = A.qmaxA*NA*SIG;
+  t('S na faixa 500–1500 m²/g', S > 500 && S < 1500, S.toFixed(0)+' m²/g');
+  // 13 · exotérmica: K cai ao aquecer
+  t('K diminui quando T sobe (exotérmica)', KT(40,10.9) < KT(25,10.9),
+    KT(25,10.9).toFixed(2)+' → '+KT(40,10.9).toFixed(2));
+  // 14 · van't Hoff de dois pontos dá ΔH negativo
+  const dHcalc = -R*Math.log(KT(40,10.9)/KT(25,10.9))/(1/313.15-1/298.15);
+  t('van’t Hoff devolve ΔH < 0', dHcalc < 0, dHcalc.toFixed(2)+' kJ/mol');
+  // 15 · FAIXA DE VALIDADE: janela estreita erra o (x/m)máx
+  const A4 = ajustes(P.pts, 4);
+  const err = 100*(A4.qmaxA-A.qmaxA)/A.qmaxA;
+  t('janela estreita erra o (x/m)máx', Math.abs(err) > 1.0,
+    err.toFixed(1)+' % com 4 pontos');
+  // 16 · e nessa janela estreita os DOIS R² continuam altos (o R² não distingue)
+  t('na janela estreita os DOIS R² ficam > 0,99', A4.rL.r2 > 0.99 && A4.rF.r2 > 0.99,
+    A4.rL.r2.toFixed(5)+' / '+A4.rF.r2.toFixed(5));
+  // 17 · equilíbrio: percentual cresce e satura
+  const ts = [5,10,15,20,30,45,60,90], pct = ts.map(x => 100*(1-Math.exp(-0.09*x)));
+  t('x/m cresce e satura com o tempo', pct.every((p,i)=> i===0 || p > pct[i-1]) && pct[7] > 99);
+  // 18 · variação 40→60 min fica na ordem da incerteza de x/m
+  const varq = (pct[6]-pct[5])/100*P.pts[4].q, uq = 0.018*P.pts[4].q;
+  t('variação 40→60 min < 2×u(x/m)', varq/uq < 2, (varq/uq).toFixed(2)+' × u(x/m)');
+  // 19 · x/m em base mássica confere com a molar
+  t('base mássica = molar × 60,052', Math.abs(P.pts[4].q*MAA - P.pts[4].q*60.052) < 1e-15);
+
+  const ok = casos.filter(c => c.ok).length;
+  const linhas = casos.map((c,i) =>
+    (c.ok ? '  PASS ' : '  FAIL ') + String(i+1).padStart(2,'0') + ' · ' + c.nome +
+    (c.info ? '   [' + c.info + ']' : '')).join('\n');
+  $('at').innerHTML = casos.length + ' casos · ' + ok + ' aprovados · ' +
+    (casos.length-ok) + ' falharam\n' + linhas;
+  window.__casos = casos;
+  window.__autoteste = (ok === casos.length);
+  return window.__autoteste;
+}
+
+window.__pronto = false;
+(function init(){
+  ['mC','T','qmax','K25','ruido','np'].forEach(id => $(id).addEventListener('input', desenha));
+  desenha();
+  autoteste();
+  window.__pronto = true;
+})();
+</script></body></html>

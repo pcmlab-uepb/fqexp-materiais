@@ -1,0 +1,3 @@
+# material didático de uso interno (Físico-Química Experimental 2026.2, UEPB)
+User-agent: *
+Disallow: /

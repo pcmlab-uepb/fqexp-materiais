@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prática 2.1 — Determinações Cinéticas (Método Integral)</title>
+<style>
+  :root{
+    --chalk:#f5f2e8; --yellow:#ffe97a; --pink:#e8a0d8; --cyan:#7fd4e8;
+    --green:#a5d6a7; --orange:#ffb74d; --ink:#16201b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{min-height:100%}
+  body{
+    background:linear-gradient(160deg,#2f6e4f 0%,#265c43 55%,#1f5540 100%);
+    color:var(--chalk);
+    font-family:"DejaVu Sans","Verdana","Segoe UI",system-ui,sans-serif;
+    padding:28px 20px 60px; line-height:1.5;
+  }
+  .wrap{max-width:940px;margin:0 auto}
+  header{margin-bottom:22px}
+  .disc{font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.5rem;margin:.25rem 0 .5rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.9rem;color:rgba(245,242,232,.72)}
+  .bar{height:8px;border-radius:6px;background:rgba(22,32,27,.45);margin-top:16px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--cyan);transition:width .35s ease}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;
+       font-size:.86rem;color:rgba(245,242,232,.8);flex-wrap:wrap}
+  .toggle{cursor:pointer;border:2px solid rgba(245,242,232,.5);background:transparent;color:var(--chalk);
+          border-radius:999px;padding:6px 14px;font:inherit;font-size:.82rem}
+  .toggle[aria-pressed="true"]{background:var(--yellow);color:var(--ink);border-color:var(--yellow);font-weight:700}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.22);border-radius:16px;
+        padding:24px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+  .qnum{font-size:.82rem;color:var(--cyan);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+  .stem{font-size:1.18rem;font-weight:700;margin-bottom:20px}
+  .opts{display:grid;gap:11px}
+  button.opt{display:flex;gap:14px;align-items:flex-start;text-align:left;width:100%;
+    background:rgba(245,242,232,.06);border:2px solid rgba(245,242,232,.28);color:var(--chalk);
+    border-radius:12px;padding:14px 16px;font:inherit;font-size:1rem;cursor:pointer;transition:.15s}
+  button.opt:hover:not(:disabled){background:rgba(245,242,232,.14);border-color:var(--chalk)}
+  button.opt:disabled{cursor:default}
+  button.opt .k{font-weight:700;color:var(--cyan);min-width:1.2em}
+  button.opt.ok{background:rgba(165,214,167,.22);border-color:var(--green)}
+  button.opt.ok .k{color:var(--green)}
+  button.opt.bad{background:rgba(232,160,216,.18);border-color:var(--pink)}
+  button.opt.bad .k{color:var(--pink)}
+  button.opt.dim{opacity:.45}
+  .fb{margin-top:18px;border-left:5px solid var(--cyan);border-radius:8px;padding:14px 16px;
+      background:rgba(22,32,27,.42);font-size:.97rem}
+  .fb.good{border-left-color:var(--green)}
+  .fb.bad{border-left-color:var(--pink)}
+  .fb b{color:var(--yellow)}
+  .fb.good b{color:var(--green)}
+  .fb.bad b{color:var(--pink)}
+  .nav{margin-top:20px;display:flex;justify-content:flex-end;gap:12px}
+  .go{background:var(--cyan);color:var(--ink);border:0;border-radius:10px;padding:12px 26px;
+      font:inherit;font-weight:700;cursor:pointer}
+  .go:disabled{opacity:.4;cursor:not-allowed}
+  .count{font-variant-numeric:tabular-nums;color:var(--yellow);font-weight:700}
+  .done{text-align:center}
+  .score{font-size:3.2rem;font-weight:700;color:var(--cyan);text-shadow:0 3px 0 rgba(22,32,27,.5)}
+  .score small{font-size:1.2rem;color:rgba(245,242,232,.7)}
+  .verdict{margin:10px 0 22px;font-size:1.1rem;color:var(--yellow)}
+  .rev{text-align:left;background:rgba(22,32,27,.3);border:2px solid rgba(245,242,232,.18);
+       border-radius:14px;padding:18px;margin-top:8px}
+  .rev h3{font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan);margin-bottom:12px}
+  .rev li{list-style:none;padding:10px 0;border-bottom:1px solid rgba(245,242,232,.12);font-size:.94rem}
+  .rev li:last-child{border-bottom:0}
+  .rev .tag{font-weight:700}
+  .rev .tag.ok{color:var(--green)}
+  .rev .tag.no{color:var(--pink)}
+  .hint{font-size:.82rem;color:rgba(245,242,232,.6);margin-top:14px;text-align:center}
+</style></head><body>
+<div role="note" class="aviso-beta" style="box-sizing:border-box;flex:0 0 100%;width:100%;background:rgba(255,233,122,.15);border-left:6px solid #ffe97a;border-radius:10px;padding:15px 22px;margin:0 0 20px;color:#f5f2e8;font-family:inherit;font-size:.95rem;line-height:1.5"><strong>Material em versão beta.</strong> Este é um material de apoio em revisão — o conteúdo e a forma ainda podem ser alterados. A fonte de estudo prioritária da disciplina continua sendo a apostila da disciplina (Manual 2020.2) e o livro-texto (Castellan; Atkins; Rangel).</div>
+<div class="wrap">
+  <header>
+    <div class="disc">Físico-Química Experimental</div>
+    <h1>Prática 2.1 — Determinações Cinéticas (Método Integral)</h1>
+    <div class="meta">Princípio 12 (erro deliberado): cada questão tem um distrator que representa o erro típico do aluno na bancada, com feedback explicando por que está errado.</div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="row">
+      <span>Questão <b id="qi">1</b> de <b id="qn">0</b> · acertos: <b id="hits">0</b></span>
+      <button class="toggle" id="ta" aria-pressed="false">Modo aula (25s p/ revelar)</button>
+    </div>
+  </header>
+  <main id="main"></main>
+  <div class="hint">Atalhos: 1–4 respondem · Enter avança · R reinicia</div>
+</div>
+<script>
+const QUIZ = {"schema": "maic-like/quiz@1", "discipline": "Físico-Química Experimental", "lesson": "Prática 2.1 — Determinações Cinéticas (Método Integral)", "language": "pt-BR", "principle": "Princípio 12 (erro deliberado): cada questão tem um distrator que representa o erro típico do aluno na bancada, com feedback explicando por que está errado.", "_fonte": "Manual20202.txt — apostila EM USO da disciplina (117 pp.): 'EXPERIMENTO Nº12: CINÉTICA QUÍMICA' (linhas 3997-4488; Eqs. 1-21; Tabela 3) gera o relatório; 'EXPERIMENTO Nº07: ORDEM DE REAÇÃO... MÉTODO DE VELOCIDADE INICIAL' (linhas 2668-3010) entra como contraste do método diferencial. Valores de k de literatura externa (ver AUDITORIA_CIENTIFICA_2_1.md, seção 3).", "_auditoria": "A alternativa CORRETA ocupa, no ARQUIVO, as letras C, B, D, B, A, D — quatro letras distintas, nenhuma respondendo a 6/6 — e o HTML ainda embaralha por Fisher-Yates a cada exibição. Corrija-se por CONTEÚDO, nunca por letra. Todos os números foram conferidos contra numeros_2_1.json (ex.: k = k'/c(I-)0 = 1,30e-4 / 0,03125 = 4,16e-3 mol-1 L s-1; R² de ln c x t = 0,99960 e de 1/c x t = 0,99953).", "questions": [{"id": "q1", "scene": "A2-3", "stem": "Uma reação tem lei de velocidade v = k·c(A)², de segunda ordem em relação a A. A unidade da constante de velocidade k é:", "options": [{"key": "A", "text": "s⁻¹ (por segundo)", "correct": false, "feedback": "Essa é a unidade da PRIMEIRA ordem. Confundir as duas é o defeito clássico: com v = k·c(A)², k = v/c², e (mol·L⁻¹·s⁻¹)/(mol·L⁻¹)² dá mol⁻¹·L·s⁻¹."}, {"key": "B", "text": "mol·L⁻¹·s⁻¹", "correct": false, "feedback": "Essa é a unidade da ORDEM ZERO, em que k = v. Não é o caso: aqui há c(A)² no denominador, e a concentração não se cancela."}, {"key": "C", "text": "mol⁻¹·L·s⁻¹", "correct": true, "feedback": "Correto. De v = k·c² vem k = v/c² = (mol·L⁻¹·s⁻¹) / (mol·L⁻¹)² = mol⁻¹·L·s⁻¹. Regra geral: k tem unidade concentração^(1−n)·tempo⁻¹, com n a ordem global."}, {"key": "D", "text": "mol²·L⁻²·s⁻¹", "correct": false, "feedback": "Aqui a concentração foi MULTIPLICADA em vez de dividida. Como k = v/c², o expoente de mol·L⁻¹ é −1, não +2."}]}, {"id": "q2", "scene": "B1-3", "stem": "No relógio de tiossulfato e amido, o que a viragem (azul) informa diretamente?", "options": [{"key": "A", "text": "A concentração de iodo formado, medida pela intensidade do azul", "correct": false, "feedback": "A viragem é um evento de tempo, não uma medida de cor: o azul aparece de repente, sempre no mesmo ponto, e não tem escala. Medir intensidade de cor exigiria espectrofotômetro."}, {"key": "B", "text": "O instante em que uma quantidade FIXA de persulfato reagiu", "correct": true, "feedback": "Correto. O tiossulfato é a quantidade fixa: quando ele acaba, o iodo seguinte encontra o amido e fica azul. Como 1 persulfato consome 2 tiossulfato, a viragem marca c(S₂O₈²⁻)_t = c₀ − ½·c(S₂O₃²⁻)₀. O relógio informa QUANDO; a estequiometria informa QUANTO."}, {"key": "C", "text": "A ordem da reação, pela coloração que aparece", "correct": false, "feedback": "Ordem não sai de cor. Ela sai do gráfico de ln c × t (ou de log(1/t) × log c₀, no método diferencial) — e, nesta montagem, nem do gráfico sai (ver a questão do R²)."}, {"key": "D", "text": "A constante de velocidade, pela posição da viragem", "correct": false, "feedback": "k sai da INCLINAÇÃO do ajuste, depois de conhecer a concentração em cada ponto. A viragem fornece apenas um par (tempo, concentração)."}]}, {"id": "q3", "scene": "D1-5", "stem": "Ajustando os MESMOS cinco pontos, o gráfico de ln c × t deu R² = 0,9996 e o de 1/c × t deu R² = 0,9995. Qual é a conclusão correta?", "options": [{"key": "A", "text": "A reação é de primeira ordem, porque o R² de ln c × t é o maior dos dois", "correct": false, "feedback": "É o erro central desta prática. Uma diferença de 0,0001 em R² é MENOR que o que a incerteza do cronômetro permite resolver. Declarar ordem a partir de um R² alto é declarar sem evidência."}, {"key": "B", "text": "A reação é de segunda ordem, porque 1/c × t é o teste padrão de segunda ordem", "correct": false, "feedback": "Ser o teste padrão não faz a segunda ordem verdadeira. Aplicar o teste de 2ª ordem a dados de 1ª ordem também dá uma reta quase perfeita nesta faixa de conversão."}, {"key": "C", "text": "Houve erro de cálculo, pois dois ajustes não podem ter R² alto ao mesmo tempo", "correct": false, "feedback": "Podem, e é justamente o problema. Com conversão de 2,5 % a 12,5 %, o termo de 2ª ordem é pequeno e as duas equações integradas se parecem."}, {"key": "D", "text": "Os dois linearizam igualmente bem dentro do ruído: o R² alto NÃO decide a ordem", "correct": true, "feedback": "Correto. A ordem se sustenta pelo DESENHO — iodeto 10× em excesso e consumido em apenas 2,5 % — e pela literatura. Reporte sempre a incerteza do expoente; a meia-vida aqui é de quase 90 min, e a corrida viu só os primeiros 12 %."}]}, {"id": "q4", "scene": "D1-6", "stem": "O ajuste de ln c × t deu k' = 1,30×10⁻⁴ s⁻¹, e a concentração de iodeto no frasco era 31,25 mmol·L⁻¹. A constante de velocidade de SEGUNDA ordem, k = k'/c(I⁻)₀, vale:", "options": [{"key": "A", "text": "4,15×10⁻³ s⁻¹", "correct": false, "feedback": "O número está certo, a UNIDADE não. s⁻¹ é a unidade da constante APARENTE k'. Para a lei de 2ª ordem, a unidade é mol⁻¹·L·s⁻¹."}, {"key": "B", "text": "4,15×10⁻³ mol⁻¹·L·s⁻¹", "correct": true, "feedback": "Correto. 1,30×10⁻⁴ s⁻¹ ÷ 0,03125 mol·L⁻¹ = 4,16×10⁻³ mol⁻¹·L·s⁻¹, e a unidade acompanha a ordem 2. Dividir por uma concentração em mol·L⁻¹ introduz o mol⁻¹·L."}, {"key": "C", "text": "1,30×10⁻⁴ mol⁻¹·L·s⁻¹", "correct": false, "feedback": "Foi repetido o valor de k' sem fazer a divisão por c(I⁻)₀. k e k' diferem por um fator de 31,25 (a concentração de iodeto)."}, {"key": "D", "text": "4,06×10⁻⁶ mol⁻¹·L·s⁻¹", "correct": false, "feedback": "Aqui k' foi MULTIPLICADO por c(I⁻)₀ em vez de dividido. Como k' = k·c(I⁻)₀, isolar k exige DIVIDIR: k = k'/c(I⁻)₀."}]}, {"id": "q5", "scene": "E1-2", "stem": "A literatura traz k = 1,60×10⁻³ mol⁻¹·L·s⁻¹ (sem sais) e 5,18×10⁻³ mol⁻¹·L·s⁻¹ (com NaNO₃ 0,4 N) para esta reação. Por que os dois valores diferem?", "options": [{"key": "A", "text": "Porque os dois reagentes são ânions e a força iônica do meio altera k", "correct": true, "feedback": "Correto. É o efeito cinético primário de sal: Brønsted–Bjerrum, log₁₀(k/k₀) = 2·A·z_A·z_B·√I, com z_A·z_B = (−2)(−1) = +2 — efeito POSITIVO. Por isso comparar k com a literatura exige declarar a força iônica, como se declara a temperatura."}, {"key": "B", "text": "Porque a constante de velocidade depende da concentração dos reagentes", "correct": false, "feedback": "Essa é a confusão mais comum da cinética. k NÃO depende da concentração — depende de temperatura e (em reações entre íons) de força iônica. A lei de velocidade é que carrega as concentrações."}, {"key": "C", "text": "Porque uma das duas referências está simplesmente errada", "correct": false, "feedback": "As duas são boas medidas — de CONDIÇÕES diferentes. O material documenta a divergência em vez de escolher um lado às escondidas."}, {"key": "D", "text": "Porque as duas séries foram medidas em temperaturas muito diferentes", "correct": false, "feedback": "A temperatura também altera k, mas a diferença aqui é declarada como efeito de ELETRÓLITO ADICIONADO na mesma referência. O efeito de sal, sozinho, já explica um fator destes."}]}, {"id": "q6", "scene": "D2-3", "stem": "Sobre os dois métodos de tratamento de dados cinéticos desta prática, o correto é:", "options": [{"key": "A", "text": "O integral usa VÁRIAS corridas e o diferencial usa UMA só", "correct": false, "feedback": "Está invertido. O integral acompanha UMA corrida em vários tempos (os cinco frascos são pontos da mesma curva); o diferencial usa várias corridas, com um ponto em cada."}, {"key": "B", "text": "Os dois exigem que a ordem da reação seja conhecida de antemão", "correct": false, "feedback": "Só o integral tem essa exigência: ele testa uma ordem por vez e vê se lineariza. O diferencial obtém o expoente direto da inclinação, sem adivinhar."}, {"key": "C", "text": "O diferencial não serve para determinar ordem; só o integral serve", "correct": false, "feedback": "O diferencial determina a ordem muito bem — é o método do Exp 07, e deu 1,01 no tiossulfato e 1,03 no ácido. O que ele não dá é o acompanhamento de uma corrida inteira."}, {"key": "D", "text": "O integral testa uma ordem por vez; o diferencial obtém o expoente direto da inclinação", "correct": true, "feedback": "Correto. Integral: uma corrida, muitos pontos, hipótese de ordem testada gráfico a gráfico. Diferencial: várias corridas, um ponto em cada, expoente direto da inclinação de log(1/t) × log c₀. Cada um cobre a fraqueza do outro."}]}]};
+const SECS = 25;
+let i = 0, hits = 0, log = [], answered = false, timer = null, left = SECS, classMode = false;
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function startTimer(){
+  clearInterval(timer);
+  if(!classMode || answered) { return; }
+  left = SECS;
+  timer = setInterval(() => {
+    left--;
+    const el = document.getElementById('cd');
+    if(el) el.textContent = left;
+    if(left <= 0){ clearInterval(timer); revealByTimer(); }
+  }, 1000);
+}
+
+/* ── Embaralhamento das alternativas (correção de 13/out/2026) ────────────────
+   Defeito encontrado ao gerar o gabarito: a alternativa CORRETA caía sempre na
+   MESMA posição (A na Prática 3, B na Prática 2), porque a ordem do JSON era a
+   ordem exibida — o aluno percebe o padrão e acerta sem saber. Agora a ordem é
+   sorteada a cada exibição (Fisher-Yates) e as letras A–D são reatribuídas na
+   ordem da tela, para o atalho de teclado 1–4 continuar válido. O feedback de cada
+   distrator acompanha a alternativa, não a posição.
+
+   Ao escrever um quiz novo: NÃO pré-ordene as alternativas no JSON para
+   "espalhar" a correta — deixe o embaralhamento cuidar disso. */
+function embaralha(arr){
+  const a = arr.slice();
+  for(let j = a.length - 1; j > 0; j--){
+    const r = Math.floor(Math.random() * (j + 1));
+    const t = a[j]; a[j] = a[r]; a[r] = t;
+  }
+  return a;
+}
+const LETRAS = 'ABCDEFGH';
+let atual = [];                    // opções na ordem da tela, com a letra exibida
+
+function ordena(q){
+  atual = embaralha(q.options).map((o, n) => ({
+    key: LETRAS[n], text: o.text, correct: o.correct, feedback: o.feedback
+  }));
+  return atual;
+}
+
+function revealByTimer(){
+  if(answered) return;
+  answered = true;
+  atual.forEach(o => {
+    const b = document.querySelector('button.opt[data-k="'+o.key+'"]');
+    if(b){ b.disabled = true; if(o.correct) b.classList.add('ok'); else b.classList.add('dim'); }
+  });
+  showFeedback(null, atual.find(o => o.correct));
+}
+
+function render(){
+  if(i >= QUIZ.questions.length) return finish();
+  answered = false;
+  const q = QUIZ.questions[i];
+  const opts = ordena(q);                    // sorteia a ordem a cada exibição
+  $('#qi').textContent = i + 1;
+  $('#hits').textContent = hits;
+  $('#bar').style.width = (i / QUIZ.questions.length * 100) + '%';
+  $('#main').innerHTML =
+    '<div class="card">' +
+      '<div class="qnum">Questão ' + (i+1) + '</div>' +
+      '<div class="stem">' + esc(q.stem) + '</div>' +
+      '<div class="opts">' + opts.map(o =>
+        '<button class="opt" data-k="' + o.key + '"><span class="k">' + o.key +
+        '</span><span>' + esc(o.text) + '</span></button>').join('') + '</div>' +
+      '<div id="fb"></div>' +
+      '<div class="nav"><button class="go" id="next" disabled>Próxima →</button></div>' +
+    '</div>';
+  document.querySelectorAll('button.opt').forEach(b =>
+    b.addEventListener('click', () => answer(b.dataset.k)));
+  $('#next').addEventListener('click', () => { i++; render(); });
+  if(classMode){
+    const f = document.createElement('div');
+    f.className = 'hint';
+    f.innerHTML = 'Revelando em <span class="count" id="cd">' + SECS + '</span>s';
+    $('#main').querySelector('.card').appendChild(f);
+    startTimer();
+  }
+}
+
+function answer(k){
+  if(answered) return;
+  answered = true; clearInterval(timer);
+  const q = QUIZ.questions[i];
+  const picked = atual.find(o => o.key === k);
+  const right = atual.find(o => o.correct);
+  atual.forEach(o => {
+    const b = document.querySelector('button.opt[data-k="'+o.key+'"]');
+    b.disabled = true;
+    if(o.correct) b.classList.add('ok');
+    else if(o.key === k) b.classList.add('bad');
+    else b.classList.add('dim');
+  });
+  if(picked.correct) hits++;
+  log.push({stem: q.stem, picked: k, right: right.key, ok: picked.correct});
+  $('#hits').textContent = hits;
+  showFeedback(picked, right);
+  $('#next').disabled = false;
+  $('#next').focus();
+}
+
+function showFeedback(picked, right){
+  const cls = picked ? (picked.correct ? 'good' : 'bad') : 'bad';
+  const head = picked
+    ? (picked.correct ? 'Correto — alternativa ' + picked.key : 'Errado — você marcou ' + picked.key + '; a correta é ' + right.key)
+    : 'Tempo esgotado — a correta é ' + right.key;
+  const body = picked ? picked.feedback : right.feedback;
+  const fb = $('#fb');
+  fb.innerHTML = '<div class="fb ' + cls + '"><b>' + head + '.</b> ' + esc(body) + '</div>';
+  const n = $('#next'); if(n) n.disabled = false;
+}
+
+function finish(){
+  clearInterval(timer);
+  $('#bar').style.width = '100%';
+  const pct = Math.round(hits / QUIZ.questions.length * 100);
+  const verdict = pct === 100 ? 'Domínio completo do conceito.'
+    : pct >= 67 ? 'Bom — revise as questões erradas antes da prática.'
+    : 'Vale reler a Parte 4 e a Parte 5 antes de vir ao laboratório.';
+  $('#main').innerHTML =
+    '<div class="card done">' +
+      '<div class="score">' + hits + '<small>/' + QUIZ.questions.length + '</small></div>' +
+      '<div class="verdict">' + verdict + '</div>' +
+      '<div class="rev"><h3>Revisão</h3><ul>' +
+        log.map((l, n) => '<li><span class="tag ' + (l.ok ? 'ok' : 'no') + '">' +
+          (l.ok ? '✔' : '✘') + '</span> <b>Q' + (n+1) + '.</b> ' + esc(l.stem) +
+          (l.ok ? '' : ' <em>(marcou ' + l.picked + '; correta: ' + l.right + ')</em>') + '</li>').join('') +
+      '</ul></div>' +
+      '<div class="nav" style="justify-content:center"><button class="go" id="again">Refazer</button></div>' +
+    '</div>';
+  $('#again').addEventListener('click', () => { i = 0; hits = 0; log = []; render(); });
+}
+
+$('#ta').addEventListener('click', e => {
+  classMode = !classMode;
+  e.target.setAttribute('aria-pressed', String(classMode));
+  render();
+});
+$('#qn').textContent = QUIZ.questions.length;
+document.addEventListener('keydown', e => {
+  if(e.key >= '1' && e.key <= '4'){
+    const k = ['A','B','C','D'][Number(e.key) - 1];
+    if(!answered && document.querySelector('button.opt[data-k="'+k+'"]')) answer(k);
+  }
+  if(e.key === 'Enter'){ const n = document.getElementById('next'); if(n && !n.disabled) n.click(); }
+  if(e.key.toLowerCase() === 'r'){ i = 0; hits = 0; log = []; render(); }
+});
+render();
+</script></body></html>
