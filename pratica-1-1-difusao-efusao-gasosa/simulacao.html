@@ -47,7 +47,7 @@ e compara com Chapman–Enskog</div>
    <input type="range" id="p" min="10" max="200" value="100" step="1">
    <label>Tempo de interdiffusão: <span class="val" id="vt"></span></label>
    <input type="range" id="t" min="60" max="3000" value="900" step="10">
-   <label>Comprimento do tubo L (semicomprimento): <span class="val" id="vL"></span></label>
+   <label>Comprimento do tubo L (semicomprimento; 2L = comprimento total): <span class="val" id="vL"></span></label>
    <input type="range" id="L" min="5" max="50" value="20" step="1">
   </div>
  </div>
@@ -64,12 +64,17 @@ e compara com Chapman–Enskog</div>
    <table>
     <tr><th>Grandeza</th><th class="num">Valor</th><th>Unidade</th></tr>
     <tr><td>Coeficiente de difusão D₁₂</td><td class="num" id="rD"></td><td>m²·s⁻¹</td></tr>
-    <tr><td>Grupo adimensional D·t/L²</td><td class="num" id="rG"></td><td>—</td></tr>
+    <tr><td>Grupo adimensional D·t/(2L)² (2L = comprimento total do tubo)</td><td class="num" id="rG"></td><td>—</td></tr>
     <tr><td>Fração transferida Δc/c₀</td><td class="num" id="rF"></td><td>—</td></tr>
     <tr><td>Massa reduzida do par</td><td class="num" id="rMu"></td><td>g·mol⁻¹</td></tr>
     <tr><td>Diâmetro de colisão do par σ₁₂</td><td class="num" id="rS"></td><td>nm</td></tr>
    </table>
    <div class="msg ok" id="msg2"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+   <h2 style="margin-top:0">Autoteste do modelo</h2>
+   <div class="msg" id="atest">rodando…</div>
   </div>
  </div>
 </div>
@@ -91,39 +96,100 @@ function mu(a,b){ return G[a].M*G[b].M/(G[a].M+G[b].M); }           // g/mol
 // Chapman-Enskog com Omega = 1 (esfera rígida). D em m^2/s.
 function D_CE(a, b, T, p_Pa){
   const m = mu(a,b)*1e-3;                 // kg/mol
-  const s = sigma12(a,b)*1e-9 * 2;        // diâmetro de colisão do par (m)
-  // ATENÇÃO: a fórmula clássica usa a densidade NUMÉRICA (moléculas/m³), não a molar.
-  // Esquecer o N_A multiplica o resultado por ~6e23 — e um teste que só confere a
-  // PROPORCIONALIDADE (D ∝ 1/p, D ∝ T^3/2) passa mesmo assim, porque o erro é um fator
-  // constante. Por isso o autoteste abaixo confere também a ORDEM DE GRANDEZA.
+  const s = sigma12(a,b)*1e-9;            // m — σ de Lennard-Jones JÁ é o diâmetro de colisão
+  // NÃO multiplique por 2: σ_LJ é a distância em que o potencial se anula, não um raio.
+  // Com o fator 2 o D sai 4x menor (D ∝ 1/σ²) — 3,9e-6 contra 1,56e-5 m²/s no N₂+CO₂.
+  // A fórmula clássica usa a densidade NUMÉRICA (moléculas/m³), não a molar: esquecer o
+  // N_A multiplica o resultado por ~6e23, e um teste que só confira PROPORCIONALIDADE
+  // passa mesmo assim (é fator constante). Por isso o autoteste abaixo compara VALOR
+  // ABSOLUTO com a equação de Bird, com tolerância de 0,1 % — não só a ordem de grandeza.
   const n = p_Pa/(R*T) * 6.02214076e23;   // moléculas/m³
   const num = (3/16)*Math.sqrt(2*Math.PI*R*T/m);
   const den = n*Math.PI*s*s;
   return num/den;
 }
 
-// fracao transferida: 1/2 - (4/pi^2) * sum_{k impar} k^-2 exp(-k^2 pi^2 Dt/L^2)
+// fração transferida: 1/2 - (4/pi^2) * sum_{k impar} k^-2 exp(-k^2 pi^2 D t / (2L)²)
+// 2L = comprimento TOTAL do tubo = 2 Lm (Lm é o semicomprimento) — o mesmo 2L do perfil.
+// Com Lm² em vez de 4Lm² o grupo fica 4x maior e a fração satura em 0,5000 (mistura
+// completa falsa); os dois erros — D 4x menor e denominador 4x menor — se cancelavam.
 function frac(D, t, Lm){
-  const x = D*t/(Lm*Lm);
+  const x = D*t/(4*Lm*Lm);
   let s = 0;
   for(let k=1;k<=99;k+=2) s += Math.exp(-k*k*Math.PI*Math.PI*x)/(k*k);
   return 0.5 - (4/(Math.PI*Math.PI))*s;
 }
 
-// perfil c(x) resolvido por série de cossenos (degrau inicial no centro)
+// perfil c(x) — série de SENOS com o degrau no centro do tubo:
+//   c(x,t) = 1/2 - sum_{m ímpar} (2/m pi) sen(m pi x / 2Lm) exp(-m² pi² D t / (2Lm)²)
+// Em t -> 0 isso é o degrau (1,0 à esquerda; 0,0 à direita) e depois um perfil
+// ANTISSIMÉTRICO em torno de 0,5: c(x) + c(-x) = 1. A versão anterior somava o seno
+// deslocado (x+Lm), que dá +0,5 em TODA a extensão: a figura nascia ~1,0 nas DUAS
+// metades e nunca mostrava o degrau (achado 1.1-B).
 function perfil(D, t, Lm, n=140){
   const out = [];
   for(let i=0;i<=n;i++){
-    const x = -Lm + 2*Lm*i/n;               // -L .. +L
-    let c = 0.5;                            // metade esquerda = 1, direita = 0
+    const x = -Lm + 2*Lm*i/n;               // -L .. +L (L = semicomprimento)
+    let c = 0.5;
     for(let m=1;m<=41;m++){
       const am = (m%2===1) ? 2/(m*Math.PI) : 0;
-      c += am*Math.sin(m*Math.PI*(x+Lm)/(2*Lm))
+      c -= am*Math.sin(m*Math.PI*x/(2*Lm))
            * Math.exp(-m*m*Math.PI*Math.PI*D*t/(4*Lm*Lm));
     }
     out.push([x, c]);
   }
   return out;
+}
+
+// ── AUTOTESTE ─────────────────────────────────────────────────────────────────
+// O comentário de D_CE citava um "autoteste abaixo" que NÃO existia no arquivo
+// (achado 1.1-E). Ele existe aqui de verdade, roda a cada abertura e é o tipo de
+// conferência que teria pegado o fator 4 do σ e o denominador de frac.
+function D_bird(a, b, T, p_Pa){
+  // Bird, Stewart & Lightfoot, Transport Phenomena, eq. 17.4-2 (Ω = 1, esfera rígida).
+  // Devolve D em m²/s: σ em Å, p em atm, resultado em cm²/s, convertido no fim.
+  const p_atm = p_Pa/101325, sA = sigma12(a,b)*10;      // nm -> Å
+  return 0.0018583*Math.pow(T,1.5)*Math.sqrt(1/G[a].M + 1/G[b].M)
+         /(p_atm*sA*sA) * 1e-4;
+}
+
+function autoteste(){
+  const res = [];
+  const chk = (nome, ok, detalhe) => res.push({nome: nome, ok: ok, detalhe: detalhe || ""});
+  const dNC = D_CE("N2","CO2",298,100000), bNC = D_bird("N2","CO2",298,100000);
+  chk("D(N₂–CO₂) reproduz Bird dentro de 0,1 %",
+      Math.abs(dNC/bNC - 1) < 1e-3,
+      dNC.toExponential(4) + " vs " + bNC.toExponential(4) + " m²·s⁻¹");
+  chk("D ∝ 1/p — a meia atmosfera DOBRA D",
+      Math.abs(D_CE("N2","CO2",298,50000)/dNC - 2) < 1e-9,
+      (D_CE("N2","CO2",298,50000)/dNC).toFixed(6));
+  chk("D ∝ T^(3/2)", Math.abs(D_CE("N2","CO2",596,100000)/dNC/Math.pow(2,1.5) - 1) < 1e-9,
+      (D_CE("N2","CO2",596,100000)/dNC).toFixed(6) + " (2^1,5 = 2,828427)");
+  chk("ordem de grandeza de D entre 1e-5 e 1e-4 m²·s⁻¹",
+      dNC > 1e-5 && dNC < 1e-4, dNC.toExponential(3) + " m²·s⁻¹");
+  const D = D_CE("H2","N2",298,100000), Lm = 0.20;
+  chk("fração em t = 900 s (H₂+N₂, 298 K, 100 kPa, semicomprimento L = 20 cm) = 0,4886",
+      Math.abs(frac(D,900,Lm) - 0.488641) < 5e-6, frac(D,900,Lm).toFixed(6));
+  chk("fração tende a 0,5000 no limite",
+      Math.abs(frac(D,1e7,Lm) - 0.5) < 1e-9, frac(D,1e7,Lm).toFixed(9));
+  chk("fração em t -> 0 é ~0 (série truncada em k = 99)",
+      Math.abs(frac(D,1e-9,Lm)) < 5e-3, frac(D,1e-9,Lm).toExponential(3));
+  const p0 = perfil(D,1e-6,Lm), p60 = perfil(D,60,Lm);
+  chk("perfil em t -> 0 é o degrau (1,0 à esquerda; 0,0 à direita)",
+      Math.abs(p0[0][1]-1) < 0.02 && Math.abs(p0[p0.length-1][1]) < 0.02,
+      p0[0][1].toFixed(3) + " / " + p0[p0.length-1][1].toFixed(3));
+  chk("perfil em t = 60 s é antissimétrico: c(x) + c(-x) = 1 em todo o tubo",
+      p60.every(function(p,i){ return Math.abs(p[1] + p60[p60.length-1-i][1] - 1) < 1e-9; }),
+      "centro = " + p60[Math.floor(p60.length/2)][1].toFixed(3));
+  const ok = res.filter(function(r){ return r.ok; }).length;
+  const linhas = res.map(function(r){
+    return (r.ok ? "✔ " : "✗ ") + r.nome + (r.detalhe ? "  — " + r.detalhe : ""); });
+  const alvo = el("atest");
+  alvo.className = "msg " + (ok === res.length ? "ok" : "warn");
+  alvo.innerHTML = "<b>Autoteste do modelo — " + ok + "/" + res.length + " passam.</b><br>" +
+                   linhas.join("<br>");
+  console.log("autoteste 1.1: " + ok + "/" + res.length);
+  return res;
 }
 
 let cur = null;
@@ -138,7 +204,7 @@ function atualiza(){
   const p = p_kPa*1000, Lm = Lcm/100;
   const D = D_CE(a, b, T, p);
   const f = frac(D, t, Lm);
-  const g = D*t/(Lm*Lm);
+  const g = D*t/(4*Lm*Lm);   // D·t/(2L)² — o MESMO grupo de frac() e perfil()
 
   el("rD").textContent = D.toExponential(3);
   el("rG").textContent = g.toExponential(3);
@@ -158,7 +224,7 @@ function atualiza(){
       — a medida perde sensibilidade. Ajuste o tempo.`;
   } else { el("msg").className = "msg"; }
 
-  el("msg2").innerHTML = `A composição depende de D e t <b>somente</b> pelo grupo <code>D·t/L²</code>.
+  el("msg2").innerHTML = `A composição depende de D e t <b>somente</b> pelo grupo <code>D·t/(2L)²</code>.
     Um erro sistemático em <i>t</i> é indistinguível de um erro em <i>D</i>.`;
 
   desenha(perfil(D, t, Lm));
@@ -195,4 +261,5 @@ atualiza = function(){ Lm_glob = (+el("L").value)/100; _atualiza(); };
 ["par","T","p","t","L"].forEach(id => el(id).addEventListener("input", atualiza));
 addEventListener("resize", atualiza);
 atualiza();
+autoteste();
 </script></body></html>
