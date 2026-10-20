@@ -93,7 +93,7 @@ td:first-child,th:first-child{text-align:left}
   <div class="card">
     <h2>3 · Registro das medidas</h2>
     <table>
-      <thead><tr><th scope="col">#</th><th scope="col">t (s)</th><th scope="col">t média (s)</th></tr></thead>
+      <thead><tr><th>#</th><th>t (s)</th><th>t média (s)</th></tr></thead>
       <tbody id="tb"><tr><td colspan="3" style="color:var(--dim)">— nenhuma medida —</td></tr></tbody>
     </table>
     <div class="lab">Densidade do líquido (da Prática 1, picnometria)</div>
@@ -103,11 +103,19 @@ td:first-child,th:first-child{text-align:left}
 
     <h2 style="margin-top:18px">Referência × medido</h2>
     <table>
-      <thead><tr><th scope="col">líquido</th><th scope="col">η tabelada</th><th scope="col">desvio</th></tr></thead>
+      <thead><tr><th>líquido</th><th>η tabelada</th><th>desvio</th></tr></thead>
       <tbody id="cmp"></tbody>
     </table>
     <div class="note" id="tip">Escolha um líquido e faça as três medidas para liberar
       o cálculo.</div>
+  </div>
+
+  <div class="card" style="flex:0 0 100%">
+    <h2>4 · Auto-teste embutido</h2>
+    <div class="note" style="margin:0 0 10px">Roda DENTRO da página, sobre o mesmo
+      código que desenha a tela. Cada caso compara <b>valor absoluto</b> com
+      tolerância declarada — nunca só a direção da variação.</div>
+    <pre id="at" class="mono" style="white-space:pre-wrap;font-size:.8rem;max-height:340px;overflow:auto;margin:0"></pre>
   </div>
 </div>
 <script>
@@ -268,8 +276,109 @@ function calcula(tMedio){
   }).join("");
 }
 
+
+/* ══════════════════ AUTO-TESTE — roda DENTRO da página, sobre o mesmo código.
+   A 1.3 era a ÚNICA das 12 sem autoteste (o gate da disciplina exige um).
+   Todos os casos comparam VALOR ABSOLUTO contra a tabela/literatura, com a
+   tolerância declarada no próprio nome do caso.                            */
+function autoteste(){
+  const casos = [];
+  const t = (nome, ok, obtido, esperado) => casos.push({nome, ok: !!ok, obtido, esperado});
+  const K = D.K_s_por_cSt;
+  const LIQS = Object.keys(D.dados), TEMPS = D.temperaturas;
+
+  // 1) a equação do capilar: t/K = η/ρ, nos 21 pontos (7 líquidos × 3 T)
+  let piorEq = 0;
+  LIQS.forEach(k => TEMPS.forEach(T => {
+    const e = D.dados[k].temperaturas[String(T)], r = D.dados[k].rho_gcm3;
+    piorEq = Math.max(piorEq, Math.abs(r*e.t_s/K - e.eta_mPas)/e.eta_mPas);
+  }));
+  t('t/K = η/ρ nos 21 pontos (erro relativo < 2e-4)', piorEq < 2e-4, piorEq.toExponential(2), 0);
+
+  // 2) a MESMA constante K sai de cada um dos 21 pontos
+  let kMin = Infinity, kMax = -Infinity;
+  LIQS.forEach(k => TEMPS.forEach(T => {
+    const e = D.dados[k].temperaturas[String(T)];
+    const kk = D.dados[k].rho_gcm3 * e.t_s / e.eta_mPas;
+    kMin = Math.min(kMin, kk); kMax = Math.max(kMax, kk);
+  }));
+  t('K = ρ·t/η recupera 67,2169 cSt/s em TODOS os pontos (|Δ| < 0,05)',
+    Math.max(Math.abs(kMax-K), Math.abs(kMin-K)) < 0.05,
+    kMin.toFixed(4)+' … '+kMax.toFixed(4), K);
+
+  // 3) água a 25 °C: o valor absoluto da literatura
+  const a25 = D.dados['água'].temperaturas['25'];
+  t('η(água,25 °C) = 0,8900 mPa·s ± 0,0005 (CRC: 0,890)',
+    Math.abs(D.dados['água'].rho_gcm3*a25.t_s/K - 0.89) < 5e-4,
+    (D.dados['água'].rho_gcm3*a25.t_s/K).toFixed(5), 0.89);
+  const a20 = D.dados['água'].temperaturas['20'];
+  t('η(água,20 °C) = 1,0016 mPa·s ± 0,002 (CRC: 1,002)',
+    Math.abs(D.dados['água'].rho_gcm3*a20.t_s/K - 1.0016) < 2e-3,
+    (D.dados['água'].rho_gcm3*a20.t_s/K).toFixed(5), 1.0016);
+  const e25 = D.dados['etanol'].temperaturas['25'];
+  t('η(etanol,25 °C) = 1,074 mPa·s ± 0,003 (CRC: 1,074)',
+    Math.abs(D.dados['etanol'].rho_gcm3*e25.t_s/K - 1.074) < 3e-3,
+    (D.dados['etanol'].rho_gcm3*e25.t_s/K).toFixed(5), 1.074);
+  t('1 cP = 1 mPa·s (a água a 20 °C é ~1 cP)',
+    a20.eta_mPas > 1 && a20.eta_mPas < 1.01, a20.eta_mPas.toFixed(4), 1.0016);
+
+  // 4) a viscosidade CAI com a temperatura, nos 7 líquidos
+  t('η cai de 20 para 30 °C em TODOS os 7 líquidos',
+    LIQS.every(k => { const q = D.dados[k].temperaturas;
+      return q['20'].eta_mPas > q['25'].eta_mPas && q['25'].eta_mPas > q['30'].eta_mPas; }),
+    LIQS.length + ' líquidos');
+
+  // 5) cresce com a concentração de sacarose
+  t('η(sacarose) cresce de 10 % a 40 % (25 °C)',
+    ['sacarose 10%','sacarose 20%','sacarose 30%','sacarose 40%']
+      .every((k,i,a) => i===0 || D.dados[k].temperaturas['25'].eta_mPas >
+                                 D.dados[a[i-1]].temperaturas['25'].eta_mPas));
+
+  // 6) o número que a prática destaca: a razão sacarose 40 % / água
+  const razao = D.dados['sacarose 40%'].temperaturas['25'].eta_mPas / a25.eta_mPas;
+  t('η(sacarose 40 %)/η(água) a 25 °C = 5,877 ± 0,010',
+    Math.abs(razao - 5.877) < 0.010, razao.toFixed(4), 5.877);
+
+  // 7) o MÉTODO RELATIVO (o que a página ensina) recupera η em todos os líquidos
+  function etaRelativa(k, T){
+    const r = D.dados[k].rho_gcm3, rA = D.dados['água'].rho_gcm3;
+    const tA = D.dados['água'].temperaturas[String(T)].t_s;
+    const tMedio = D.dados[k].temperaturas[String(T)].t_s;
+    const etaA = REF['água'].eta_mPas *
+      (D.dados['água'].temperaturas[String(T)].eta_mPas / D.dados['água'].temperaturas['25'].eta_mPas);
+    return (r*tMedio)/(rA*tA) * etaA;
+  }
+  let piorRel = 0;
+  LIQS.forEach(k => TEMPS.forEach(T => {
+    const ref = D.dados[k].temperaturas[String(T)].eta_mPas;
+    piorRel = Math.max(piorRel, Math.abs(etaRelativa(k,T) - ref)/ref);
+  }));
+  t('o método RELATIVO (ρt/ρ_água·t_água · η_água) reproduz a tabela (< 0,5 %)',
+    piorRel < 5e-3, (100*piorRel).toFixed(4)+' %', '0,5 %');
+
+  // 8) o espalhamento de leitura de ±0,3 s, medido nos tempos reais
+  const tMin = Math.min(...LIQS.map(k => D.dados[k].temperaturas['25'].t_s));
+  const tMax = Math.max(...LIQS.map(k => D.dados[k].temperaturas['25'].t_s));
+  t('±0,3 s de leitura pesa 1,16 % no tempo MAIS CURTO (25,965 s) e 0,10 % no maior',
+    Math.abs(100*0.3/tMin - 1.156) < 0.02 && Math.abs(100*0.3/tMax - 0.10) < 0.01,
+    (100*0.3/tMin).toFixed(3)+' % / '+(100*0.3/tMax).toFixed(3)+' %');
+
+  // 9) o tubo em U está na vertical: senão a pressão hidrostática muda
+  t('o instrumento começa na vertical (a leitura só vale assim)', inclinado === false);
+
+  const ok = casos.filter(c => c.ok).length;
+  el('at').textContent = casos.length + ' casos · ' + ok + ' aprovados · ' +
+    (casos.length - ok) + ' falharam\n' +
+    casos.map((c,i) => (c.ok ? '  PASS ' : '  FAIL ') + String(i+1).padStart(2,'0') + ' · ' +
+      c.nome + (c.obtido !== undefined ? '   [' + c.obtido + ']' : '')).join('\n');
+  window.__casos = casos;
+  window.__autoteste = (ok === casos.length);
+  return window.__autoteste;
+}
+
 el("run").onclick = medir;
-montaBotoes(); desenha();
+montaBotoes(); desenha(); autoteste();
+window.__pronto = true;
 </script>
 </div>
 </body>

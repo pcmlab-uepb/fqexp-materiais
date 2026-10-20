@@ -209,7 +209,7 @@ function ajuste(Tfix){
 function pintaCurva(){
   const A = ajuste();
   const loc = (A.ys[3]-A.ys[2])/(A.xs[3]-A.xs[2]);
-  $("#tb").innerHTML = "<tr><th scope="col">% m/v</th><th scope="col">ρ medida</th><th scope="col">ρ ajustada</th><th scope="col">resíduo</th></tr>" +
+  $("#tb").innerHTML = "<tr><th>% m/v</th><th>ρ medida</th><th>ρ ajustada</th><th>resíduo</th></tr>" +
     A.xs.map((x,i)=>"<tr><td>"+x+"</td><td>"+f4(A.ys[i])+"</td><td>"+f4(A.a*x+A.b)+
       "</td><td>"+(A.res[i]>=0?"+":"")+A.res[i].toExponential(1).replace(".",",")+"</td></tr>").join("");
   $("#s2").innerHTML =
