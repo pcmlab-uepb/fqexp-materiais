@@ -228,23 +228,125 @@ function temp(){const t=parseFloat($("t").value),nt=parseFloat($("nt").value),d=
    "comparável à resolução de 0,0001 do instrumento.";}
 ["t","nt","dndt"].forEach(i=>$(i).oninput=temp);
 
-/* ── autoteste de física ────────────────────────────────────────────── */
-(function(){
-  const t=[];
-  const tc=Math.asin(1.40/1.75)*180/Math.PI;
-  t.push(["θc (prisma 1,75 / amostra 1,40) = 53,13°", Math.abs(tc-53.13)<0.02]);
-  const w=lorentz(1.3325,18.0153,0.9965);
-  t.push(["R_m(água) = 3,71 cm³/mol", Math.abs(w.R-3.71)<0.01]);
-  const hx=lorentz(1.372,86.1753,0.6528);
-  t.push(["R_m(n-hexano) = 30,0 cm³/mol", Math.abs(hx.R-30.0)<0.02]);
-  const cf=lorentz(1.444,119.377,1.4745);
-  t.push(["R_m(clorofórmio) = 21,5 cm³/mol", Math.abs(cf.R-21.51)<0.02]);
-  t.push(["θc é indefinido se n_amostra ≥ n_prisma", (1.75/1.75)>=1]);
-  const ok=t.every(x=>x[1]);
-  $("selftest").className="out"+(ok?"":" warn");
-  $("selftest").innerHTML=(ok?"✓ física íntegra":"✗ DIVERGE")+" — "+t.length+" verificações<br>"+
-    t.map(x=>"<span class='"+(x[1]?"ok":"no")+"'>"+(x[1]?"✔":"✘")+"</span> "+x[0]).join("<br>");
-})();
+/* ══════════════════════════════════════════════════════════════════════════════
+   AUTOTESTE — valor ABSOLUTO contra a tabela, com tolerância DECLARADA.
+
+   Duas tabelas, ambas independentes do que o código calcula:
+     TAB_RM   — refração molar de referência (cm³·mol⁻¹, 25 °C), tolerância ±0,10
+     TAB_RHO  — densidade de referência (g·cm⁻³, 25 °C), tolerância declarada item a item
+
+   O caso 09 é o CONTROLE NEGATIVO interno: ele exige que a densidade ERRADA do
+   clorofórmio (1,4259, a do enunciado antigo do manual) produza R_m fora da tolerância.
+   Se alguém "consertar" a tabela para aceitar 1,4259, o autoteste reprova — a mesma
+   propriedade que o controle negativo externo verifica com a página inteira.
+   ══════════════════════════════════════════════════════════════════════════════ */
+const TAB_RM = {           // cm³·mol⁻¹ a 25 °C — tabela de referência da disciplina
+  "Água":        3.71,
+  "Etanol":     12.90,
+  "n-Hexano":   30.00,
+  "Acetona":    16.15,
+  "Isopropanol":17.80,
+  "Clorofórmio":21.51,
+};
+const TOL_RM = 0.10;       // declarada: ±0,10 cm³·mol⁻¹
+
+const TAB_RHO = {          // g·cm⁻³ a 25 °C — Quadro 6.1 do manual (conferido no CRC)
+  "Água":        [0.9965,  0.0020],
+  "Etanol":      [0.7864,  0.0020],
+  "n-Hexano":    [0.6528,  0.0020],
+  "Acetona":     [0.7878,  0.0020],
+  "Isopropanol": [0.77283, 0.0005],
+  "Clorofórmio": [1.4745,  0.0005],   // o valor que o defeito antigo trocava por 1,4259
+};
+
+function autoteste(){
+  const casos = [];
+  const t = (nome, ok, obtido, esperado) =>
+    casos.push({nome: nome, ok: !!ok, obtido: obtido, esperado: esperado});
+  const num = (v, d) => (v === undefined || v === null) ? "—" : v.toFixed(d).replace(".", ",");
+
+  /* ── 1 · ângulo crítico (valor absoluto) ──────────────────────────────────── */
+  const tc14 = Math.asin(1.40/1.75) * 180 / Math.PI;
+  t("θc (amostra 1,40 / prisma 1,75) = 53,13° ± 0,02°", Math.abs(tc14 - 53.13) < 0.02,
+    num(tc14, 2) + "°", "53,13°");
+  const tc13 = Math.asin(1.33/1.75) * 180 / Math.PI;
+  t("θc (amostra 1,33 / prisma 1,75) = 49,46° ± 0,02°", Math.abs(tc13 - 49.46) < 0.02,
+    num(tc13, 2) + "°", "49,46°");
+  t("sin θc = n_amostra/n_prisma em três pares (identidade ± 1e-12)",
+    [[1.40,1.75],[1.33,1.75],[1.30,1.90]].every(([na,np]) =>
+      Math.abs(Math.sin(Math.asin(na/np)) - na/np) < 1e-12));
+  t("n_amostra = 1,75 com prisma 1,75 NÃO tem ângulo crítico (razão ≥ 1)",
+    (1.75/1.75) >= 1 && !(1.70/1.75 >= 1), "razão 1,000", "razão ≥ 1");
+
+  /* ── 2 · R_m contra a TABELA, substância por substância ─────────────────── */
+  Object.keys(TAB_RM).forEach(function(k){
+    const v = Q61[k];
+    if (!v) { t("R_m(" + k + "): substância ausente do Quadro 6.1", false, "—", k); return; }
+    const R = lorentz(v.n, v.M, v.rho).R;
+    t("R_m(" + k + ") = " + num(TAB_RM[k], 2) + " ± " + num(TOL_RM, 2) + " cm³·mol⁻¹",
+      Math.abs(R - TAB_RM[k]) < TOL_RM, num(R, 3), num(TAB_RM[k], 2));
+  });
+
+  /* ── 3 · ρ contra a TABELA, com a tolerância de cada linha ───────────────── */
+  Object.keys(TAB_RHO).forEach(function(k){
+    const v = Q61[k], ref = TAB_RHO[k];
+    if (!v) { t("ρ(" + k + "): substância ausente do Quadro 6.1", false, "—", k); return; }
+    t("ρ(" + k + ") = " + num(ref[0], 5).replace(/,0+$/, "") + " ± " + num(ref[1], 4) +
+      " g·cm⁻³", Math.abs(v.rho - ref[0]) < ref[1], num(v.rho, 5), num(ref[0], 5));
+  });
+
+  /* ── 4 · o defeito ANTIGO tem de ser reprovado (controle negativo interno) ─ */
+  const ERRADO = lorentz(Q61["Clorofórmio"].n, Q61["Clorofórmio"].M, 1.4259).R;
+  t("ρ = 1,4259 (o valor ERRADO do manual) dá R_m = 22,2 e é REPROVADO pela tabela",
+    Math.abs(ERRADO - 21.51) > 0.5,
+    "R_m = " + num(ERRADO, 2) + " (fora de 21,51 ± 0,10)", "21,51 ± 0,10");
+
+  /* ── 5 · geometria da Lorentz-Lorenz ─────────────────────────────────────── */
+  const cf = Q61["Clorofórmio"];
+  const f_cf = (cf.n*cf.n - 1)/(cf.n*cf.n + 2);
+  t("R_m = [(n²−1)/(n²+2)]·(M/ρ) reproduz a conta à mão (± 1e-9)",
+    Math.abs(lorentz(cf.n, cf.M, cf.rho).R - f_cf*cf.M/cf.rho) < 1e-9);
+  t("R_m CAI quando ρ sobe 1 % (R ∝ 1/ρ) — o sinal que denuncia densidade trocada",
+    lorentz(cf.n, cf.M, cf.rho*1.01).R < lorentz(cf.n, cf.M, cf.rho).R,
+    num(lorentz(cf.n, cf.M, cf.rho*1.01).R, 3), "menor que " + num(lorentz(cf.n, cf.M, cf.rho).R, 3));
+  t("refração específica r = R_m/M em todas as seis substâncias (identidade ± 1e-12)",
+    Object.keys(TAB_RM).every(function(k){
+      const v = Q61[k], o = lorentz(v.n, v.M, v.rho);
+      return Math.abs(o.r - o.R/v.M) < 1e-12;
+    }));
+
+  /* ── 6 · curva de calibração e correção de temperatura ───────────────────── */
+  const SER = [[0,1.4442],[20,1.4296],[40,1.4153],[60,1.4012],[80,1.3864],[100,1.3722]];
+  const nS = SER.length, Sx = SER.reduce((a,p)=>a+p[0],0), Sy = SER.reduce((a,p)=>a+p[1],0),
+        Sxy = SER.reduce((a,p)=>a+p[0]*p[1],0), Sxx = SER.reduce((a,p)=>a+p[0]**2,0);
+  const aR = (nS*Sxy - Sx*Sy)/(nS*Sxx - Sx*Sx), bR = (Sy - aR*Sx)/nS;
+  const yb = Sy/nS;
+  const r2R = 1 - SER.reduce((s,p)=>s+(p[1]-(aR*p[0]+bR))**2,0) /
+                  SER.reduce((s,p)=>s+(p[1]-yb)**2,0);
+  t("série hexano+clorofórmio do exemplo: inclinação −7,2×10⁻⁴ ± 1e-5 %⁻¹",
+    Math.abs(aR + 7.2e-4) < 1e-5, aR.toExponential(3), "−7,2e-4");
+  t("essa série: R² = 0,9999 ± 0,0002", Math.abs(r2R - 0.9999) < 0.0002, num(r2R, 5), "0,9999");
+  const t24 = 24.0, nt24 = 1.3709, dndt = -0.00045;
+  t("n(20 °C) = n(t) − (dn/dt)(t−20) = 1,3727 ± 1e-4", Math.abs((nt24 - dndt*(t24-20)) - 1.3727) < 1e-4,
+    num(nt24 - dndt*(t24-20), 4), "1,3727");
+
+  /* ── resultado ───────────────────────────────────────────────────────────── */
+  const ok = casos.filter(c => c.ok).length;
+  $("selftest").className = "out" + (ok === casos.length ? "" : " warn");
+  $("selftest").innerHTML =
+    "<b>" + casos.length + " casos · " + ok + " aprovados · " +
+      (casos.length - ok) + " falharam</b><br>" +
+    casos.map(function(c, i){
+      return "<span class='" + (c.ok ? "ok" : "no") + "'>" + (c.ok ? "✔" : "✘") + "</span> " +
+        String(i+1).padStart(2,"0") + " · " + c.nome +
+        (c.obtido !== undefined ? "   [obtido " + c.obtido +
+          (c.esperado !== undefined ? " · esperado " + c.esperado : "") + "]" : "");
+    }).join("<br>");
+  window.__casos = casos;
+  window.__autoteste = (ok === casos.length);
+  return window.__autoteste;
+}
 
 carrega("Água"); ang(); curva();
+autoteste();
 </script></body></html>

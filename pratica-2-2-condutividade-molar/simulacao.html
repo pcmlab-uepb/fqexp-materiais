@@ -47,7 +47,9 @@
   <div class="disc">Físico-Química Experimental · 2026.2 · UEPB/PCMLab</div>
   <h1>Simulação — Prática 2.2 · Condutividade molar e a Lei de Kohlrausch</h1>
   <div class="meta">KCl de 0,0005 a 0,100 mol·L⁻¹ · κ = k_cél·G · Λm = 1000 κ/c ·
-    Λm = Λ° − K√c · meio: <b>EXEMPLO ILUSTRATIVO</b>, com Λ(KCl) do CRC a 25 °C</div>
+    Λm = Λ° − K√c · meio: <b>EXEMPLO ILUSTRATIVO</b>, com Λ(KCl) do CRC a 25 °C.
+    Duas séries convivem: o <b>Λ de referência</b> do CRC (147,06 na janela do manual) e as
+    <b>sete medidas do exemplo</b>, com a deriva declarada (147,6 — o valor que a prática reporta).</div>
 </header>
 <div class="grid">
   <div>
@@ -84,7 +86,8 @@
         <div style="max-height:250px;overflow:auto">
         <table id="tab"><thead><tr>
           <th scope="col">c / mol·L⁻¹</th><th scope="col">√c</th><th scope="col">Λm (25 °C)</th><th scope="col">κ / mS·cm⁻¹</th>
-          <th scope="col">κ_medida / mS·cm⁻¹</th><th scope="col">Λm sem subtrair</th></tr></thead><tbody></tbody></table>
+          <th scope="col">κ_medida / mS·cm⁻¹</th><th scope="col">Λm sem subtrair</th>
+          <th scope="col">Λm do exemplo, 25 °C (deriva)</th></tr></thead><tbody></tbody></table>
         </div>
       </div>
     </div>
@@ -109,6 +112,10 @@ const LAM25 = {0.1:128.90, 0.08:130.49, 0.06:132.29, 0.04:134.73,
                0.002:144.665, 0.001:146.88, 0.0005:147.74};
 const CMANUAL = [0.1, 0.08, 0.06, 0.04, 0.02, 0.01, 0.005];
 const CDIL    = [0.005, 0.002, 0.001, 0.0005];
+/* As SETE MEDIDAS do exemplo (numeros_2_2.json -> lambda_exp): Λ = 1000·(κ_medida − κ_água)/c
+   com a deriva térmica declarada de ±0,03 °C por medida. MESMA ordem de CMANUAL.
+   É destas que sai o 147,62 / −62,4 / viés −2,17 — o número que a prática reporta. */
+const MEDIDO  = [128.384, 130.109, 132.058, 134.644, 138.319, 141.440, 143.802];
 const LAM0 = 149.79;            // CRC, coluna de diluição infinita
 const LAMK = 73.48, LAMCL = 76.31;
 const ALFA = 0.0208;            // 2,08 %/K — MEDIDO nas tabelas do NIST (20-25 °C)
@@ -178,7 +185,9 @@ function desenha(){
       Math.sqrt(c).toFixed(4).replace('.',',') + '</td><td>' + lamT(c,T).toFixed(2).replace('.',',') +
       '</td><td>' + (kappa(c,T)*1000).toFixed(4).replace('.',',') + '</td><td>' +
       (o ? o.kmed_mS.toFixed(4).replace('.',',') : '—') + '</td><td>' +
-      (o ? o.lamVisor.toFixed(2).replace('.',',') : '—') + '</td></tr>';
+      (o ? o.lamVisor.toFixed(2).replace('.',',') : '—') + '</td><td>' +
+      (MEDIDO[CMANUAL.indexOf(c)] !== undefined && MEDIDO[CMANUAL.indexOf(c)] !== null
+        ? MEDIDO[CMANUAL.indexOf(c)].toFixed(2).replace('.',',') : '—') + '</td></tr>';
   });
   CDIL.filter(c => !CMANUAL.includes(c)).forEach(c => {
     const o = lin.find(x => x.c === c);
@@ -187,41 +196,66 @@ function desenha(){
       o.sqrtc.toFixed(4).replace('.',',') + '</td><td>' + o.lam.toFixed(2).replace('.',',') +
       '</td><td>' + o.kesp_mS.toFixed(4).replace('.',',') + '</td><td>' +
       o.kmed_mS.toFixed(4).replace('.',',') + '</td><td>' +
-      o.lamVisor.toFixed(2).replace('.',',') + '</td></tr>';
+      o.lamVisor.toFixed(2).replace('.',',') + '</td><td>—</td></tr>';
   });
   $('tab').querySelector('tbody').innerHTML = th;
 
-  const r = regressao(cs.map(Math.sqrt), lam);
+  /* Λ de REFERÊNCIA do CRC (a série do gráfico) e Λ das SETE MEDIDAS do exemplo — as duas
+     grandezas da MESMA janela. Sem rótulo, 147,06 e 147,62 parecem o mesmo número com dois
+     valores; com rótulo, são o que são: a janela sem e com a deriva da bancada. */
+  const r     = regressao(cs.map(Math.sqrt), lam);                              // janela selecionada
+  const rMan  = regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c => lamT(c, T))); // manual, referência
+  const rMed  = regressao(CMANUAL.map(Math.sqrt), MEDIDO);                      // manual, medido
+  const man   = (jan === 'manual');
+  const sgn   = (v, d) => '−' + Math.abs(v).toFixed(d).replace('.', ',');
+  const num   = (v, d) => { const s = v.toFixed(d).replace('.', ',');
+                            return s.charAt(0) === '-' ? '−' + s.slice(1) : s; };
+
   $('s2').innerHTML =
     'janela: <b>' + cs[0].toString().replace('.',',') + ' a ' +
       cs[cs.length-1].toString().replace('.',',') + ' mol·L⁻¹</b>   (' + cs.length + ' pontos)\n' +
-    'inclinação ajustada = <b>' + r.b.toFixed(1).replace('.',',') + '</b>   ·   ' +
+    'a série do gráfico e do ajuste é o <b>Λ de REFERÊNCIA do CRC</b> — sem a deriva do banho\n' +
+    'inclinação ajustada = <b>' + sgn(r.b,1) + '</b>   ·   ' +
       'inclinação-limite da teoria = <b>−' + SLOPE_TEORIA.toFixed(1).replace('.',',') + '</b>' +
       '   (' + (100*r.b/(-SLOPE_TEORIA)).toFixed(0) + ' %)\n' +
-    'intercepto = Λ° = <b>' + r.a.toFixed(2).replace('.',',') + ' ± ' +
-      r.ua.toFixed(2).replace('.',',') + ' S·cm²·mol⁻¹</b>   ·   R² = <b>' +
-      r.r2.toFixed(5).replace('.',',') + '</b>\n' +
-    'viés contra o valor aceito: <b>' + (r.a-LAM0).toFixed(2).replace('.',',') + '</b>  =  ' +
-      (Math.abs(r.a-LAM0)/r.ua).toFixed(1).replace('.',',') + '× a incerteza do ajuste';
+    'intercepto = Λ° = <b>' + num(r.a,2) + ' ± ' + num(r.ua,2) +
+      ' S·cm²·mol⁻¹</b>   ·   R² = <b>' + num(r.r2,5) + '</b>\n' +
+    'viés contra o valor aceito: <b>' + num(r.a-LAM0,2) + '</b>  =  ' +
+      num(Math.abs(r.a-LAM0)/r.ua,1) + '× a incerteza do ajuste' +
+      '   [referencia_sem_deriva]' +
+    (man
+      ? '\n\nas SETE MEDIDAS do exemplo (κ_medida − κ_água, com a deriva de ±0,03 °C declarada):\n' +
+        '   Λ° = <b>' + num(rMed.a,2) + ' ± ' + num(rMed.ua,2) + '</b>   ·   viés <b>' +
+        num(rMed.a-LAM0,2) + '</b> = ' + num(Math.abs(rMed.a-LAM0)/rMed.ua,1) +
+        '× u   ·   inclinação <b>' + sgn(rMed.b,1) + '</b>\n' +
+        '   [medido_janela_manual] é ESTE o 147,6 ± 0,4 que a fala, o quadro e o quiz citam.'
+      : '\n\n(a janela diluída não tem série de bancada: os Λ dela são de referência)');
 
   $('s3').innerHTML =
-    'ROTA 1 · extrapolação (a desta janela)\n' +
-    '   Λ° = <b>' + r.a.toFixed(2).replace('.',',') + '</b>   erro ' +
-      (r.a-LAM0).toFixed(2).replace('.',',') + '\n\n' +
-    'ROTA 2 · migração independente\n' +
+    'ROTA 1 · extrapolação (o ajuste desta janela, Λ de referência)\n' +
+    '   Λ° = <b>' + num(r.a,2) + '</b>   erro ' +
+      num(r.a-LAM0,2) + '\n' +
+    (man ? '   as SETE MEDIDAS (deriva): Λ° = <b>' + num(rMed.a,2) + ' ± ' + num(rMed.ua,2) +
+           '</b>   erro ' + num(rMed.a-LAM0,2) + '\n' : '') +
+    '\nROTA 2 · migração independente\n' +
     '   λ°(K⁺) + λ°(Cl⁻) = ' + LAMK.toFixed(2).replace('.',',') + ' + ' +
       LAMCL.toFixed(2).replace('.',',') + ' = <b>' + (LAMK+LAMCL).toFixed(2).replace('.',',') +
       '</b>   erro ' + (LAMK+LAMCL-LAM0).toFixed(3).replace('.',',') + '\n\n' +
     'a Rota 2 não depende da janela — some ÍONS, não ajuste reta.';
 
+  /* DUAS JANELAS — a linha do MANUAL imprime o intercepto da janela do MANUAL.
+     Antes: rdil.a (149,49, a janela DILUÍDA) ao lado do viés do manual (−2,73). */
   const rdil = regressao(CDIL.map(Math.sqrt), CDIL.map(c => lamT(c,T)));
   $('s4').innerHTML =
-    'A MESMA lei, a MESMA aritmética, duas janelas:\n' +
-    '  manual (0,005–0,100): Λ° = ' + rdil.a.toFixed(2).replace('.',',') +
-      '  → viés ' + (regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c=>lamT(c,T))).a - LAM0)
-        .toFixed(2).replace('.',',') + '\n' +
-    '  diluída (0,0005–0,005): Λ° = ' + rdil.a.toFixed(2).replace('.',',') +
-      '  → viés ' + (rdil.a - LAM0).toFixed(2).replace('.',',') + '\n' +
+    'A MESMA lei, a MESMA aritmética, duas janelas — Λ de REFERÊNCIA do CRC (sem deriva):\n' +
+    '  manual (0,005–0,100): Λ° = ' + num(rMan.a,2) +
+      '  → viés ' + num(rMan.a - LAM0,2) +
+      '  (' + num(Math.abs(rMan.a-LAM0)/rMan.ua,1) + '× u)\n' +
+    '  diluída (0,0005–0,005): Λ° = ' + num(rdil.a,2) +
+      '  → viés ' + num(rdil.a - LAM0,2) + '\n' +
+    'as sete MEDIDAS do exemplo (deriva declarada) dão, na janela do manual:\n' +
+    '  Λ° = ' + num(rMed.a,2) + '  → viés ' + num(rMed.a - LAM0,2) +
+      '  (' + num(Math.abs(rMed.a-LAM0)/rMed.ua,1) + '× u)  [medido_janela_manual]\n' +
     'a janela diluída chega ~9× mais perto. A LEI está certa; a janela do manual é que não serve.\n\n' +
     'E o orçamento: u(medição) ≈ 0,46 % (padrão 0,04 + repetibilidade 0,20 + T 0,42) contra o\n' +
     'viés da janela ≈ 1,4 % — a JANELA pesa ~3× mais que toda a bancada.';
@@ -396,6 +430,43 @@ function autoteste(){
   t('Λm sem subtrair − Λm = 1000·κ_água/c em toda a série ± 1e-6',
     L25.every(o => Math.abs((o.lamVisor - o.lam) - 1000*(o.kiso_mS/1000)/o.c) < 1e-6),
     vn(o5.lamVisor - o5.lam,4), vn(1000*(o5.kiso_mS/1000)/o5.c,4));
+
+  /* ── AS DUAS GRANDEZAS DA JANELA DO MANUAL, cada uma com seu rótulo ──────────
+     O defeito antigo: a linha do MANUAL do painel imprimia 149,49 (a janela DILUÍDA)
+     ao lado do viés −2,73 (o da janela do manual) — 149,79 − 149,49 = 0,30, não 2,73.
+     Estes casos existem para que esse erro não volte. */
+  const _rMan = regressao(CMANUAL.map(Math.sqrt), CMANUAL.map(c => lamT(c, 25)));
+  const _rMed = regressao(CMANUAL.map(Math.sqrt), MEDIDO);
+  const _rDil = regressao(CDIL.map(Math.sqrt), CDIL.map(c => lamT(c, 25)));
+  t('janela do manual, Λ de REFERÊNCIA: Λ° = 147,06 ± 0,01  [referencia_sem_deriva]',
+    Math.abs(_rMan.a - 147.059) < 0.01, vn(_rMan.a, 3), '147,059');
+  t('essa janela: inclinação −59,0 ± 0,1 (62,5 % da limite de 94,5)',
+    Math.abs(Math.abs(_rMan.b) - 59.027) < 0.1 && Math.abs(100*Math.abs(_rMan.b)/SLOPE_TEORIA - 62.5) < 0.2,
+    vn(Math.abs(_rMan.b), 3)+' · '+vn(100*Math.abs(_rMan.b)/SLOPE_TEORIA,1)+' %');
+  t('essa janela: viés −2,73 ± 0,01 = 6,0× a incerteza do ajuste',
+    Math.abs((_rMan.a - LAM0) + 2.731) < 0.01 && Math.abs(Math.abs(_rMan.a-LAM0)/_rMan.ua - 6.0) < 0.05,
+    vn(_rMan.a - LAM0, 3)+' · '+vn(Math.abs(_rMan.a-LAM0)/_rMan.ua,1)+'×');
+  t('as SETE MEDIDAS do exemplo (deriva): Λ° = 147,62 ± 0,01  [medido_janela_manual]',
+    Math.abs(_rMed.a - 147.618) < 0.01, vn(_rMed.a, 3), '147,618');
+  t('essas medidas: inclinação −62,4 ± 0,1 e viés −2,17 ± 0,01 = 4,8× u',
+    Math.abs(Math.abs(_rMed.b) - 62.361) < 0.1 && Math.abs((_rMed.a - LAM0) + 2.172) < 0.01
+      && Math.abs(Math.abs(_rMed.a-LAM0)/_rMed.ua - 4.8) < 0.05,
+    vn(Math.abs(_rMed.b), 3)+' · '+vn(_rMed.a - LAM0, 3));
+  t('a fala/quadro/quiz citam o valor DAS MEDIDAS (147,6 ± 0,4), não o da referência',
+    Math.abs(_rMed.a - 147.6) < 0.05 && Math.abs(_rMan.a - 147.6) > 0.5,
+    vn(_rMed.a, 1)+' vs '+vn(_rMan.a, 1));
+  t('a janela DILUÍDA devolve 149,49 ± 0,01 — e não é o número da janela do manual',
+    Math.abs(_rDil.a - 149.492) < 0.01 && Math.abs(_rDil.a - _rMan.a) > 2,
+    vn(_rDil.a, 3), '149,492');
+  t('a linha do MANUAL no painel das duas janelas imprime 147,06 — não o 149,49 da diluída',
+    (() => { const L = $('s4').textContent.split('\n')
+               .filter(l => l.indexOf('manual (0,005') >= 0 && l.indexOf('diluída') < 0);
+             return L.length === 1 && L[0].indexOf('147,06') >= 0 && L[0].indexOf('149,49') < 0; })(),
+    'linha do manual');
+  t('e a linha da DILUÍDA imprime 149,49 (as duas linhas não coincidem)',
+    (() => { const L = $('s4').textContent.split('\n')
+               .filter(l => l.indexOf('diluída (0,0005') >= 0);
+             return L.length === 1 && L[0].indexOf('149,49') >= 0; })(), 'linha da diluída');
 
   const ok = casos.filter(c => c.ok).length;
   const linhas = casos.map((c,i) =>
