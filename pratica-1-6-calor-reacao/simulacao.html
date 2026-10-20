@@ -72,7 +72,7 @@
         <div class="hint">A deriva do período final é o rastro da troca de calor com o ambiente.
           Esticando as <b>duas</b> retas até o instante τ obtém-se o ΔT corrigido — e ele não muda
           quando a deriva muda. Arraste a deriva de 0 a −0,20 e compare: o ΔT de pico caminha de
-          6,20 a 5,73 °C, enquanto o corrigido fica em 6,00 °C. É isso que a extrapolação compra.</div>
+          6,00 a 5,53 °C, enquanto o corrigido fica em 6,00 °C. É isso que a extrapolação compra.</div>
       </div>
     </div>
   </div>
@@ -176,21 +176,22 @@ function ccalMistura(mq, tq, mf, tf, teq){
 }
 
 /* ── curva T × t (modelo: deriva linear + PATAMAR exponencial pós-mistura) ─────
-   Antes de τ o calorímetro está abaixo da temperatura ambiente e AQUECE devagar
-   (+0,10 °C/min). Depois da mistura ele fica acima do ambiente e ESFRIA com a
+   Antes de τ o calorímetro está em equilíbrio com o banho: T = T0 (reta pré
+   horizontal). Depois da mistura ele fica acima do ambiente e ESFRIA com a
    deriva `leak`. A subida não é instantânea: a mistura e a homogenização levam
    alguns segundos, modelados pela relaxação exponencial de constante TAU_EXP.
-   O patamar é DTM: T → T(τ) + DTM quando t − τ ≫ TAU_EXP.                */
+   O patamar é DTM = 6,00 °C: T → T0 + DTM quando t − τ ≫ TAU_EXP, e é ele que
+   a reta final esticada para trás recupera em τ (29,50 °C, como na fala).  */
 const TAUS = 2.0, T0 = 23.50, DTM = 6.00, N = 11;
 const TAU_EXP = 0.45;                    // min — mistura + homogenização térmica
 function pontos(leak){
   const p = [];
-  const T_tau = T0 + 0.10*TAUS;                             // reta do pré-período em τ
+  const T_tau = T0;                     // pré-período PLANO: a reta pré dá T0 em τ
   for (let k=0;k<=N;k++){
     const t = k;
     let T;
     if (t <= TAUS){
-      T = T0 + 0.10*t;                                      // pré-período: aquece
+      T = T0;                                               // pré-período: estabilizado
     } else {
       const dtm = t - TAUS;
       T = T_tau + DTM*(1 - Math.exp(-dtm/TAU_EXP)) + leak*dtm;   // patamar + deriva
@@ -352,9 +353,8 @@ function autoteste(){
   t('C_sol = m·c', perto(m*CW,430.5,0.1), m*CW, 430.5);
   t('C_total = m·c + C_cal', perto(cTotal(m,46.0),476.5,0.1), cTotal(m,46.0), 476.5);
   t('ΔH_neut (ΔT = 6,00)', perto(dH(50,50,6.00,46.0),-57.18,0.01), dH(50,50,6.00,46.0), -57.18);
-  t('ΔH_neut sem correção (ΔT = 6,35)', perto(dH(50,50,6.35,46.0),-60.52,0.01),
-    dH(50,50,6.35,46.0), -60.52);
-  t('erro de quem não corrige', perto(Math.abs(dH(50,50,6.35,46.0)-dH(50,50,6.00,46.0)),3.34,0.02),
+  t('sensibilidade: ΔT 0,35 °C a mais vale −3,34 kJ·mol⁻¹ (± 0,02)',
+    perto(Math.abs(dH(50,50,6.35,46.0)-dH(50,50,6.00,46.0)),3.34,0.02),
     Math.abs(dH(50,50,6.35,46.0)-dH(50,50,6.00,46.0)), 3.34);
   const cd = ccalMistura(50,42.0,50,24.0,32.3);
   t('C_cal pelo método da mistura', perto(cd,35.3,0.2), cd, 35.3);
@@ -387,14 +387,14 @@ function autoteste(){
   t('curva: com leak = 0 a curva TEM patamar (T(11) = T(7) ± 0,02 °C)',
     perto(analisaCurva(0).pts[11][1], analisaCurva(0).pts[7][1], 0.02),
     analisaCurva(0).pts[11][1], analisaCurva(0).pts[7][1]);
-  t('curva: o patamar vale T(τ) + 6,00 °C (leak = 0) ± 0,02',
-    perto(analisaCurva(0).pts[11][1] - (T0 + 0.10*TAUS), DTM, 0.02),
-    analisaCurva(0).pts[11][1] - (T0 + 0.10*TAUS), DTM);
+  t('curva: o patamar vale T0 + 6,00 °C = 29,50 °C (leak = 0) ± 0,02',
+    perto(analisaCurva(0).pts[11][1] - T0, DTM, 0.02),
+    analisaCurva(0).pts[11][1] - T0, DTM);
   t('curva: com leak = −0,20 a curva AINDA termina acima de T(0) (reação exotérmica)',
     analisaCurva(-0.20).pts[11][1] > analisaCurva(-0.20).pts[0][1],
     analisaCurva(-0.20).pts[11][1], analisaCurva(-0.20).pts[0][1]);
-  t('curva: ΔT de pico (leak = −0,20) = 5,73 °C ± 0,03',
-    perto(analisaCurva(-0.20).dTn, 5.7295, 0.03), analisaCurva(-0.20).dTn, 5.7295);
+  t('curva: ΔT de pico (leak = −0,20) = 5,53 °C ± 0,03',
+    perto(analisaCurva(-0.20).dTn, 5.5295, 0.03), analisaCurva(-0.20).dTn, 5.5295);
   t('curva: ΔT de pico ≠ ΔT corrigido — o pico sozinho NÃO serve (leak = −0,08)',
     Math.abs(analisaCurva(-0.08).dTn - DTM) > 0.02,
     analisaCurva(-0.08).dTn, DTM);
@@ -407,9 +407,11 @@ function autoteste(){
   t('ΔH_neut DA CURVA está entre −56 e −58 (não é 40× menor)',
     dH(50,50,analisaCurva(-0.08).dTc,46.0) > -58 && dH(50,50,analisaCurva(-0.08).dTc,46.0) < -56,
     dH(50,50,analisaCurva(-0.08).dTc,46.0), -57.18);
-  t('ΔH sem correção (ΔT de pico, leak = −0,20) = −54,61 kJ·mol⁻¹ ± 0,05',
-    perto(dH(50,50,analisaCurva(-0.20).dTn,46.0), -54.606, 0.05),
-    dH(50,50,analisaCurva(-0.20).dTn,46.0), -54.606);
+  t('ΔH sem correção (ΔT de pico, leak = −0,20) = −52,70 kJ·mol⁻¹ ± 0,05',
+    perto(dH(50,50,analisaCurva(-0.20).dTn,46.0), -52.700, 0.05),
+    dH(50,50,analisaCurva(-0.20).dTn,46.0), -52.700);
+  t('curva: com deriva ZERO o pico JÁ é o resultado (ΔT = 6,00 °C, ± 0,02)',
+    perto(analisaCurva(0).dTn, DTM, 0.02), analisaCurva(0).dTn, DTM);
 
   const ok = casos.filter(c=>c.ok).length;
   let h = '<b>'+ok+'/'+casos.length+' casos aprovados</b>\n';
