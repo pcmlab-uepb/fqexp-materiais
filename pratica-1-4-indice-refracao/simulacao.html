@@ -130,7 +130,7 @@ const Q61={
  "n-Hexano":   {M:86.1753, rho:0.6528,  n:1.372},
  "Acetona":    {M:58.0791, rho:0.7878,  n:1.357},
  "Isopropanol":{M:60.0950, rho:0.77283, n:1.375},
- "Clorofórmio":{M:119.377, rho:1.4259,  n:1.444},
+ "Clorofórmio":{M:119.377, rho:1.4745,  n:1.444},
  "— manual —": {M:60.0950, rho:0.8035,  n:1.3850},
 };
 function lorentz(n,M,rho){const f=(n*n-1)/(n*n+2);return{f, r:f/rho, R:f*M/rho};}
@@ -237,8 +237,8 @@ function temp(){const t=parseFloat($("t").value),nt=parseFloat($("nt").value),d=
   t.push(["R_m(água) = 3,71 cm³/mol", Math.abs(w.R-3.71)<0.01]);
   const hx=lorentz(1.372,86.1753,0.6528);
   t.push(["R_m(n-hexano) = 30,0 cm³/mol", Math.abs(hx.R-30.0)<0.02]);
-  const cf=lorentz(1.444,119.377,1.4259);
-  t.push(["R_m(clorofórmio) = 22,2 cm³/mol", Math.abs(cf.R-22.24)<0.02]);
+  const cf=lorentz(1.444,119.377,1.4745);
+  t.push(["R_m(clorofórmio) = 21,5 cm³/mol", Math.abs(cf.R-21.51)<0.02]);
   t.push(["θc é indefinido se n_amostra ≥ n_prisma", (1.75/1.75)>=1]);
   const ok=t.every(x=>x[1]);
   $("selftest").className="out"+(ok?"":" warn");
