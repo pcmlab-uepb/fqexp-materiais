@@ -57,9 +57,9 @@
     <h2>1 · Ângulo crítico e o limite do refratômetro</h2>
     <div class="grid g2">
       <div>
-        <label>Índice do prisma — <span id="npv">1,750</span></label>
+        <label for="np">Índice do prisma — <span id="npv">1,750</span></label>
         <input type="range" id="np" min="1.60" max="1.90" step="0.005" value="1.75">
-        <label>Índice da amostra — <span id="nav">1,400</span></label>
+        <label for="na">Índice da amostra — <span id="nav">1,400</span></label>
         <input type="range" id="na" min="1.20" max="1.75" step="0.001" value="1.40">
         <div class="out" id="saida-angulo"></div>
       </div>
@@ -76,12 +76,12 @@
   <div class="card">
     <h2>2 · Refração específica e refração molar (Lorentz-Lorenz)</h2>
     <div class="grid g3">
-      <div><label>Substância (Quadro 6.1)</label>
+      <div><label for="subs">Substância (Quadro 6.1)</label>
         <select id="subs"></select></div>
-      <div><label>M (g·mol⁻¹)</label><input type="number" id="M" step="0.0001"></div>
-      <div><label>ρ (g·cm⁻³)</label><input type="number" id="rho" step="0.0001"></div>
+      <div><label for="M">M (g·mol⁻¹)</label><input type="number" id="M" step="0.0001"></div>
+      <div><label for="rho">ρ (g·cm⁻³)</label><input type="number" id="rho" step="0.0001"></div>
     </div>
-    <label>n (índice de refração)</label><input type="number" id="n" step="0.0001">
+    <label for="n">n (índice de refração)</label><input type="number" id="n" step="0.0001">
     <div class="out" id="saida-ll"></div>
     <div class="foot">A equação de Lorentz-Lorenz não está escrita no manual — é a da bibliografia
       da disciplina (IUPAC Green Book / Atkins). Proveniência declarada.</div>
@@ -91,7 +91,7 @@
     <h2>3 · Curva de calibração, equação da reta e R²</h2>
     <div class="sub" style="margin-top:-6px;font-size:.85rem">
       Entre os pontos medidos (porcentagem, índice). A amostra desconhecida é resolvida pela reta.</div>
-    <table id="tab"><thead><tr><th>%</th><th>n medido</th><th></th></tr></thead><tbody></tbody></table>
+    <table id="tab"><thead><tr><th scope="col">%</th><th scope="col">n medido</th><th scope="col"></th></tr></thead><tbody></tbody></table>
     <div class="grid g2" style="margin-top:12px">
       <div><button id="add" style="padding:9px 16px;border-radius:9px;border:0;
         background:var(--cyan);color:var(--ink);font:inherit;font-weight:700;cursor:pointer">
@@ -99,7 +99,7 @@
         <button id="pre" style="padding:9px 16px;border-radius:9px;border:2px solid var(--chalk);
         background:transparent;color:var(--chalk);font:inherit;cursor:pointer;margin-left:8px">
         exemplo (hexano+clorofórmio)</button></div>
-      <div><label>n da amostra desconhecida</label><input type="number" id="nunk" step="0.0001" value="1.4100"></div>
+      <div><label for="nunk">n da amostra desconhecida</label><input type="number" id="nunk" step="0.0001" value="1.4100"></div>
     </div>
     <div class="out" id="saida-curva"></div>
   </div>
@@ -107,9 +107,9 @@
   <div class="card">
     <h2>4 · Correção de temperatura</h2>
     <div class="grid g3">
-      <div><label>t de leitura (°C)</label><input type="number" id="t" step="0.1" value="24.0"></div>
-      <div><label>n lido</label><input type="number" id="nt" step="0.0001" value="1.3709"></div>
-      <div><label>dn/dt (K⁻¹)</label><input type="number" id="dndt" step="0.00001" value="-0.00045"></div>
+      <div><label for="t">t de leitura (°C)</label><input type="number" id="t" step="0.1" value="24.0"></div>
+      <div><label for="nt">n lido</label><input type="number" id="nt" step="0.0001" value="1.3709"></div>
+      <div><label for="dndt">dn/dt (K⁻¹)</label><input type="number" id="dndt" step="0.00001" value="-0.00045"></div>
     </div>
     <div class="out" id="saida-temp"></div>
     <div class="foot">Genérico para orgânicos: −4,5×10⁻⁴ K⁻¹ (faixa −3,5 a −5,5×10⁻⁴).

@@ -32,7 +32,6 @@
  .ok{border-left-color:var(--vd)}
  code{background:#0c141c;padding:2px 5px;border-radius:4px;color:var(--rs);font-size:13px}
 </style></head><body>
-<div role="note" class="aviso-beta" style="box-sizing:border-box;flex:0 0 100%;width:100%;background:rgba(255,233,122,.15);border-left:6px solid #ffe97a;border-radius:10px;padding:15px 22px;margin:0 0 20px;color:#f5f2e8;font-family:inherit;font-size:.95rem;line-height:1.5"><strong>Material em versão beta.</strong> Este é um material de apoio em revisão — o conteúdo e a forma ainda podem ser alterados. A fonte de estudo prioritária da disciplina continua sendo a apostila da disciplina (Manual 2020.2) e o livro-texto (Castellan; Atkins; Rangel).</div>
 <h1>Difusão no tubo de Loschmidt</h1>
 <div class="sub">Prática 1.1 · Físico-Química Experimental · o modelo resolve a 2ª lei de Fick
 e compara com Chapman–Enskog</div>
@@ -40,15 +39,15 @@ e compara com Chapman–Enskog</div>
 <div class="grid">
  <div>
   <div class="card">
-   <label>Par de gases</label>
+   <label for="par">Par de gases</label>
    <select id="par"></select>
-   <label>Temperatura: <span class="val" id="vT"></span></label>
+   <label for="T">Temperatura: <span class="val" id="vT"></span></label>
    <input type="range" id="T" min="273" max="600" value="298" step="1">
-   <label>Pressão: <span class="val" id="vp"></span></label>
+   <label for="p">Pressão: <span class="val" id="vp"></span></label>
    <input type="range" id="p" min="10" max="200" value="100" step="1">
-   <label>Tempo de interdiffusão: <span class="val" id="vt"></span></label>
+   <label for="t">Tempo de interdiffusão: <span class="val" id="vt"></span></label>
    <input type="range" id="t" min="60" max="3000" value="900" step="10">
-   <label>Comprimento do tubo L (semicomprimento; 2L = comprimento total): <span class="val" id="vL"></span></label>
+   <label for="L">Comprimento do tubo L (semicomprimento; 2L = comprimento total): <span class="val" id="vL"></span></label>
    <input type="range" id="L" min="5" max="50" value="20" step="1">
   </div>
  </div>
@@ -63,7 +62,7 @@ e compara com Chapman–Enskog</div>
   <div class="card" style="margin-top:16px">
    <h2 style="margin-top:0">O que a medida entrega</h2>
    <table>
-    <tr><th>Grandeza</th><th class="num">Valor</th><th>Unidade</th></tr>
+    <tr><th scope="col">Grandeza</th><th scope="col" class="num">Valor</th><th scope="col">Unidade</th></tr>
     <tr><td>Coeficiente de difusão D₁₂</td><td class="num" id="rD"></td><td>m²·s⁻¹</td></tr>
     <tr><td>Grupo adimensional D·t/(2L)² (2L = comprimento total do tubo)</td><td class="num" id="rG"></td><td>—</td></tr>
     <tr><td>Fração transferida Δc/c₀</td><td class="num" id="rF"></td><td>—</td></tr>

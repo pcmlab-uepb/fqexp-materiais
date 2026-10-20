@@ -64,11 +64,11 @@
       (κ = 12,852 mS·cm⁻¹ a 25,0 °C). Λ°m(HAc) = <b>390,7 S·cm²·mol⁻¹</b> (Kohlrausch).</p>
     <div class="grid">
       <div>
-        <label>Contaminação da água κ(água): <b id="lkw">0,0014 mS·cm⁻¹</b></label>
+        <label for="kw">Contaminação da água κ(água): <b id="lkw">0,0014 mS·cm⁻¹</b></label>
         <input type="range" id="kw" min="0" max="0.005" step="0.0001" value="0.0014">
-        <label>Erro relativo na constante da célula θ: <b id="le">0,0 %</b></label>
+        <label for="e">Erro relativo na constante da célula θ: <b id="le">0,0 %</b></label>
         <input type="range" id="e" min="-5" max="5" step="0.5" value="0">
-        <label>Ka verdadeiro do modelo, a 25,0 °C: <b id="lka">1,75×10⁻⁵ mol·L⁻¹</b></label>
+        <label for="ka">Ka verdadeiro do modelo, a 25,0 °C: <b id="lka">1,75×10⁻⁵ mol·L⁻¹</b></label>
         <input type="range" id="ka" min="1.2" max="2.4" step="0.01" value="1.75">
         <label style="margin-top:14px"><input type="checkbox" id="sub" checked>
           subtrair κ(água) — o Quadro 11.1 do Exp 11</label>
@@ -82,9 +82,9 @@
   <div class="card">
     <h2>2 · A tabela dos quatro pontos</h2>
     <table id="tab">
-      <thead><tr><th>c / mol·L⁻¹</th><th>κ médido / mS·cm⁻¹</th><th>κ_esp / mS·cm⁻¹</th>
-      <th>Λm / S·cm²·mol⁻¹</th><th>α</th><th>Kc = cα²/(1−α) / mol·L⁻¹</th>
-      <th>Ka = Kc·γ±² / mol·L⁻¹</th></tr></thead>
+      <thead><tr><th scope="col">c / mol·L⁻¹</th><th scope="col">κ médido / mS·cm⁻¹</th><th scope="col">κ_esp / mS·cm⁻¹</th>
+      <th scope="col">Λm / S·cm²·mol⁻¹</th><th scope="col">α</th><th scope="col">Kc = cα²/(1−α) / mol·L⁻¹</th>
+      <th scope="col">Ka = Kc·γ±² / mol·L⁻¹</th></tr></thead>
       <tbody></tbody>
     </table>
     <div class="out" id="s2"></div>

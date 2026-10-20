@@ -49,9 +49,9 @@
   <h2>Painel 1 · O picnômetro: calibre, meça e veja quem erra</h2>
   <div class="grid">
     <div>
-      <label>Temperatura da bancada: <b id="lbT">20,0 °C</b></label>
+      <label for="T">Temperatura da bancada: <b id="lbT">20,0 °C</b></label>
       <input type="range" id="T" min="10" max="29" step="1" value="20">
-      <label>Líquido no picnômetro</label>
+      <label for="liq">Líquido no picnômetro</label>
       <select id="liq">
         <option value="agua">água destilada (calibra)</option>
         <option value="sac10">sacarose 10 % (m/v)</option>
@@ -65,7 +65,7 @@
       </select>
       <label><input type="checkbox" id="gota"> gota externa no picnômetro (+0,15 g)</label>
       <label><input type="checkbox" id="bolha"> bolha de ar retida (0,10 mL)</label>
-      <label>erro multiplicativo da balança: <b id="lbcal">0,0 %</b></label>
+      <label for="cal">erro multiplicativo da balança: <b id="lbcal">0,0 %</b></label>
       <input type="range" id="cal" min="-2" max="2" step="0.1" value="0">
     </div>
     <div>
@@ -87,7 +87,7 @@
     </div>
     <div>
       <div class="out" id="s2"></div>
-      <label>densidade LIDA da amostra desconhecida: <b id="lbrho">1,04221</b> g·cm⁻³</label>
+      <label for="esp">densidade LIDA da amostra desconhecida: <b id="lbrho">1,04221</b> g·cm⁻³</label>
       <input type="range" id="esp" min="0.998" max="1.16" step="0.00001" value="1.04221">
       <label><input type="checkbox" id="deg" checked> Coca-Cola degaseificada (aberta de um dia para o outro)</label>
       <div class="out" id="s3"></div>
@@ -152,7 +152,11 @@ const f5 = (x) => x.toFixed(5).replace(".", ",");
 const CASOS = [];
 function caso(nome, ok, det){ CASOS.push({nome:nome, ok:!!ok, det:det||""}); }
 
-function rhoEm(k, T){ return LIQ[k].rho + LIQ[k].d * (T - T0); }
+/* ∂ρ/∂T é NEGATIVO: d é o módulo da queda por grau. O sinal de "+" fazia ρ
+   CRESCER com T — o modelo contradizia a Tabela 1 do manual, que ele mesmo
+   imprime na linha de cima da mesma caixa (ρ(H₂O,25) = 0,997044 lá, 0,999203
+   aqui). Corrigido em 20/10/2026. */
+function rhoEm(k, T){ return LIQ[k].rho - LIQ[k].d * (T - T0); }
 
 /* ───────── medição pelo picnômetro ───────── */
 function medir(){
@@ -192,8 +196,8 @@ function pinta(){
 function f3(x){ return x.toFixed(3).replace(".", ","); }
 
 /* ───────── a curva de calibração ───────── */
-function ajuste(){
-  const T = +$("#T").value;
+function ajuste(Tfix){
+  const T = (Tfix === undefined) ? +$("#T").value : Tfix;
   const xs = SERIE.map(k=>C_MV[k]), ys = SERIE.map(k=>rhoEm(k,T));
   const n = xs.length, sx = xs.reduce((a,b)=>a+b,0), sy = ys.reduce((a,b)=>a+b,0);
   const sxx = xs.reduce((a,b)=>a+b*b,0), sxy = xs.reduce((a,b,i)=>a+b*ys[i],0);
@@ -205,7 +209,7 @@ function ajuste(){
 function pintaCurva(){
   const A = ajuste();
   const loc = (A.ys[3]-A.ys[2])/(A.xs[3]-A.xs[2]);
-  $("#tb").innerHTML = "<tr><th>% m/v</th><th>ρ medida</th><th>ρ ajustada</th><th>resíduo</th></tr>" +
+  $("#tb").innerHTML = "<tr><th scope="col">% m/v</th><th scope="col">ρ medida</th><th scope="col">ρ ajustada</th><th scope="col">resíduo</th></tr>" +
     A.xs.map((x,i)=>"<tr><td>"+x+"</td><td>"+f4(A.ys[i])+"</td><td>"+f4(A.a*x+A.b)+
       "</td><td>"+(A.res[i]>=0?"+":"")+A.res[i].toExponential(1).replace(".",",")+"</td></tr>").join("");
   $("#s2").innerHTML =
@@ -265,7 +269,7 @@ function pintaDens(){
   $("#s6").innerHTML =
     "DEPENDÊNCIA TÉRMICA (o termo SISTEMÁTICO, que o orçamento NÃO contém)\n" +
     "ρ(H₂O,T) cai " + f5(TAB1[20]-TAB1[21]) + " g·cm⁻³ por °C perto de 20 °C\n" +
-    "sensibilidade da amostra: água 0,020 %/°C · sacarose 40 % 0,035 %/°C · etanol 80 % 0,12 %/°C\n" +
+    "sensibilidade da amostra: água 0,020 %/°C · sacarose 40 % 0,030 %/°C · etanol 80 % 0,12 %/°C\n" +
     "no etanol, 1 °C pesa MAIS que o orçamento inteiro — e por isso a temperatura se DECLARA " +
     "em cada medida, não se propaga.";
 }
@@ -302,12 +306,38 @@ function autoteste(){
         ssr=ys.reduce((s,y,i)=>s+(y-(a*xs[i]+b))**2,0), r2=1-ssr/sst;
   caso("R² da calibração > 0,999", r2>0.999, r2.toFixed(6));
   caso("a inclinação ajustada fica entre 0,003 e 0,0045", a>0.003 && a<0.0045, a.toFixed(6));
-  // leitura da Coca-Cola
-  const cDeg = (1.04221-b)/a, cGas = (1.04221+0.0018-b)/a;
-  caso("Coca degaseificada lê entre 10 e 11,5 % (m/v)", cDeg>10 && cDeg<11.5, f2(cDeg));
+  // leitura da Coca-Cola — SEMPRE na temperatura de calibração (20 °C): o
+  // autoteste não pode depender da posição do slider
+  const A20 = ajuste(20), b20 = A20.b, a20 = A20.a;
+  const cDeg = (1.04221-b20)/a20, cGas = (1.04221+0.0018-b20)/a20;
+  caso("Coca degaseificada lê entre 10 e 11,5 % (m/v) a 20 °C", cDeg>10 && cDeg<11.5, f2(cDeg));
   caso("com gás, a leitura é MAIOR (o CO₂ também pesa)", cGas>cDeg, f2(cGas));
   caso("o desvio sobre o rótulo (10,6) fica entre +1 e +5 %",
        100*(cDeg-10.6)/10.6>1 && 100*(cDeg-10.6)/10.6<5, f2(100*(cDeg-10.6)/10.6));
+
+  /* ── O MODELO rhoEm CONTRA A TABELA 1 DO MANUAL — o buraco exato onde o
+     defeito do sinal morava: 17 casos, nenhum comparava os dois. ─────────── */
+  caso("rhoEm('agua',20) = 0,998203 g·cm⁻³ (âncora da calibração, ±1e-9)",
+       Math.abs(rhoEm('agua',20)-TAB1[20])<1e-9, f5(rhoEm('agua',20)));
+  caso("rhoEm('agua',25) = 0,997203 e o manual (L701) diz 0,997044 — desvio 0,016 % (< 0,03 %)",
+       Math.abs(rhoEm('agua',25)-0.997044)/0.997044 < 3e-4,
+       f5(rhoEm('agua',25))+' vs 0,99704 ('+f3(100*(rhoEm('agua',25)-0.997044)/0.997044)+' %)');
+  caso("rhoEm('agua',29) = 0,996403 e o manual diz 0,995944 — desvio 0,046 % (< 0,06 %)",
+       Math.abs(rhoEm('agua',29)-0.995944)/0.995944 < 6e-4,
+       f5(rhoEm('agua',29))+' vs 0,99594 ('+f3(100*(rhoEm('agua',29)-0.995944)/0.995944)+' %)');
+  caso("rhoEm('agua',T) DIMINUI com T em toda a faixa 10–29 °C (o sinal)",
+       Object.keys(TAB1).map(Number).sort((a,b)=>a-b).every((t,i,a)=>
+         i===0 || rhoEm('agua',t) < rhoEm('agua',a[i-1])),
+       f5(rhoEm('agua',10))+' → '+f5(rhoEm('agua',29)));
+  caso("|rhoEm('agua',T) − TAB1[T]| < 8e-4 em TODOS os 20 pontos da tabela",
+       Object.keys(TAB1).every(t => Math.abs(rhoEm('agua',+t)-TAB1[+t]) < 8e-4),
+       (()=>{let m=0;Object.keys(TAB1).forEach(t=>m=Math.max(m,Math.abs(rhoEm('agua',+t)-TAB1[+t])));return m.toExponential(2);})());
+  caso("sensibilidade da água = 0,020 %/°C (manual: 0,00021 g·cm⁻³ = 0,021 %)",
+       Math.abs(100*(rhoEm('agua',20)/rhoEm('agua',25)-1)/5 - 0.020) < 0.001,
+       f3(100*(rhoEm('agua',20)/rhoEm('agua',25)-1)/5)+' %/°C');
+  caso("sensibilidade da sacarose 40 % = 0,030 %/°C",
+       Math.abs(100*(rhoEm('sac40',20)/rhoEm('sac40',25)-1)/5 - 0.030) < 0.001,
+       f3(100*(rhoEm('sac40',20)/rhoEm('sac40',25)-1)/5)+' %/°C');
   // orçamento de incerteza
   const uM=Math.sqrt(2)*(0.01/Math.sqrt(3))/M_H2O, uVrel=0.0825e-2;
   caso("massa e volume EMPATAM no orçamento (razão < 1,1)", Math.abs(uM/uVrel-1)<0.1,

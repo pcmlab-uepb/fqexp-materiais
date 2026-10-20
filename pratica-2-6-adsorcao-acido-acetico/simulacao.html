@@ -59,17 +59,17 @@
     <h2>1 · O modelo do experimento</h2>
     <div class="grid">
       <div>
-        <label>massa de carvão por frasco: <b id="lbM">3,0000 g</b></label>
+        <label for="mC">massa de carvão por frasco: <b id="lbM">3,0000 g</b></label>
         <input type="range" id="mC" min="0.5" max="6" step="0.1" value="3">
-        <label>Temperatura: <b id="lbT">25,0 °C</b></label>
+        <label for="T">Temperatura: <b id="lbT">25,0 °C</b></label>
         <input type="range" id="T" min="10" max="50" step="0.5" value="25">
-        <label>(x/m)máx verdadeiro / 10⁻³ mol·g⁻¹</label>
+        <label for="qmax">(x/m)máx verdadeiro / 10⁻³ mol·g⁻¹</label>
         <input type="number" id="qmax" value="6.53" step="0.05" min="1" max="20">
-        <label>K verdadeiro a 25,0 °C / L·mol⁻¹</label>
+        <label for="K25">K verdadeiro a 25,0 °C / L·mol⁻¹</label>
         <input type="number" id="K25" value="10.9" step="0.1" min="1" max="60">
-        <label>erro de leitura da bureta / mL</label>
+        <label for="ruido">erro de leitura da bureta / mL</label>
         <input type="number" id="ruido" value="0.02" step="0.01" min="0" max="0.1">
-        <label>nº de pontos usados no ajuste: <b id="lbN">7</b></label>
+        <label for="np">nº de pontos usados no ajuste: <b id="lbN">7</b></label>
         <input type="range" id="np" min="3" max="7" step="1" value="7">
       </div>
       <div class="out" id="s1"></div>
@@ -82,8 +82,8 @@
   <div class="card">
     <h2>2 · A planilha de dados</h2>
     <table id="tab">
-      <thead><tr><th>c₀ / mol·L⁻¹</th><th>V(NaOH) / mL</th><th>cₑ / mol·L⁻¹</th>
-      <th>x/m / 10⁻³ mol·g⁻¹</th><th>x/m / mg·g⁻¹</th><th>f adsorvida</th></tr></thead>
+      <thead><tr><th scope="col">c₀ / mol·L⁻¹</th><th scope="col">V(NaOH) / mL</th><th scope="col">cₑ / mol·L⁻¹</th>
+      <th scope="col">x/m / 10⁻³ mol·g⁻¹</th><th scope="col">x/m / mg·g⁻¹</th><th scope="col">f adsorvida</th></tr></thead>
       <tbody></tbody>
     </table>
     <div class="out" id="s2"></div>

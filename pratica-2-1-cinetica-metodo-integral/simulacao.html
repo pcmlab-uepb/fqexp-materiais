@@ -63,13 +63,13 @@
       <b>c(I⁻)₀ = 31,25 mmol·L⁻¹</b> em TODOS os frascos. Só o tiossulfato muda.</p>
     <div class="grid">
       <div>
-        <label>Temperatura da corrida: <b id="lbT">25,0 °C</b></label>
+        <label for="T">Temperatura da corrida: <b id="lbT">25,0 °C</b></label>
         <input type="range" id="T" min="10" max="45" step="0.5" value="25">
-        <label>V(Na₂S₂O₃ adicionado ao frasco 1) / mL</label>
+        <label for="v1">V(Na₂S₂O₃ adicionado ao frasco 1) / mL</label>
         <input type="number" id="v1" value="1.0" step="0.5" min="0.5" max="5">
-        <label>k' a 25,0 °C / 10⁻⁴ s⁻¹ (o que o ajuste devolve)</label>
+        <label for="k25">k' a 25,0 °C / 10⁻⁴ s⁻¹ (o que o ajuste devolve)</label>
         <input type="number" id="k25" value="1.30" step="0.01" min="0.2" max="5">
-        <label>E<sub>a</sub> do modelo / kJ·mol⁻¹</label>
+        <label for="ea">E<sub>a</sub> do modelo / kJ·mol⁻¹</label>
         <input type="number" id="ea" value="50.2" step="0.5" min="20" max="90">
       </div>
       <div class="out" id="s1"></div>
@@ -81,8 +81,8 @@
   <div class="card">
     <h2>2 · A tabela dos cinco frascos</h2>
     <table id="tab">
-      <thead><tr><th>Frasco</th><th>V(Na₂S₂O₃) / mL</th><th>c(S₂O₃²⁻)₀ / mmol·L⁻¹</th>
-      <th>t / s</th><th>c(S₂O₈²⁻)<sub>t</sub> / mmol·L⁻¹</th><th>ln(c / mmol·L⁻¹)</th></tr></thead>
+      <thead><tr><th scope="col">Frasco</th><th scope="col">V(Na₂S₂O₃) / mL</th><th scope="col">c(S₂O₃²⁻)₀ / mmol·L⁻¹</th>
+      <th scope="col">t / s</th><th scope="col">c(S₂O₈²⁻)<sub>t</sub> / mmol·L⁻¹</th><th scope="col">ln(c / mmol·L⁻¹)</th></tr></thead>
       <tbody></tbody>
     </table>
     <div class="out" id="s2"></div>

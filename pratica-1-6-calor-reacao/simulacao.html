@@ -63,15 +63,16 @@
     <div class="grid">
       <canvas id="cv" width="560" height="420"></canvas>
       <div>
-        <label>Perda de calor / atrito do agitador — deriva do período final
+        <label for="leak">Perda de calor / atrito do agitador — deriva do período final
           <span class="k" id="lv">−0,08 °C/min</span></label>
         <input type="range" id="leak" min="-0.20" max="0" step="0.005" value="-0.08">
-        <label>Capacidade do calorímetro C<sub>cal</sub> — <span class="k" id="cv2">46,0 J·K⁻¹</span></label>
+        <label for="ccal">Capacidade do calorímetro C<sub>cal</sub> — <span class="k" id="cv2">46,0 J·K⁻¹</span></label>
         <input type="range" id="ccal" min="10" max="60" step="1" value="46">
         <div class="out" id="s1"></div>
         <div class="hint">A deriva do período final é o rastro da troca de calor com o ambiente.
-          Esticando as duas retas até o instante τ obtém-se o ΔT corrigido. Desligue a deriva
-          (arraste para 0) e veja o ΔT "de pico" virar o resultado — e o erro que isso traz.</div>
+          Esticando as <b>duas</b> retas até o instante τ obtém-se o ΔT corrigido — e ele não muda
+          quando a deriva muda. Arraste a deriva de 0 a −0,20 e compare: o ΔT de pico caminha de
+          6,20 a 5,73 °C, enquanto o corrigido fica em 6,00 °C. É isso que a extrapolação compra.</div>
       </div>
     </div>
   </div>
@@ -80,23 +81,23 @@
     <h2>2 · Calibração — quanto calor o APARELHO absorve por grau</h2>
     <div class="grid">
       <div>
-        <label>Resistência da bobina R<sub>h</sub> / Ω</label>
+        <label for="rh">Resistência da bobina R<sub>h</sub> / Ω</label>
         <input type="number" id="rh" value="6.00" step="0.01">
-        <label>Corrente I / A</label>
+        <label for="ia">Corrente I / A</label>
         <input type="number" id="ia" value="1.50" step="0.01">
-        <label>Tempo de aquecimento t / s</label>
+        <label for="ta">Tempo de aquecimento t / s</label>
         <input type="number" id="ta" value="60.0" step="0.1">
-        <label>ΔT do aquecimento / °C</label>
+        <label for="dta">ΔT do aquecimento / °C</label>
         <input type="number" id="dta" value="1.70" step="0.01">
         <div class="out" id="s2"></div>
       </div>
       <div>
         <label>— ou o método da mistura (água quente + fria) —</label>
-        <label>m da água quente / g</label><input type="number" id="mq" value="50.0" step="0.1">
-        <label>θ da água quente / °C</label><input type="number" id="tq" value="42.0" step="0.1">
-        <label>m da água fria / g</label><input type="number" id="mf" value="50.0" step="0.1">
-        <label>θ da água fria / °C</label><input type="number" id="tf" value="24.0" step="0.1">
-        <label>θ de equilíbrio (corrigida) / °C</label><input type="number" id="teq" value="32.3" step="0.1">
+        <label for="mq">m da água quente / g</label><input type="number" id="mq" value="50.0" step="0.1">
+        <label for="tq">θ da água quente / °C</label><input type="number" id="tq" value="42.0" step="0.1">
+        <label for="mf">m da água fria / g</label><input type="number" id="mf" value="50.0" step="0.1">
+        <label for="tf">θ da água fria / °C</label><input type="number" id="tf" value="24.0" step="0.1">
+        <label for="teq">θ de equilíbrio (corrigida) / °C</label><input type="number" id="teq" value="32.3" step="0.1">
         <div class="out" id="s3"></div>
       </div>
     </div>
@@ -106,21 +107,21 @@
     <h2>3 · A reação — entalpia e confronto com a literatura</h2>
     <div class="grid">
       <div>
-        <label>Reação</label>
+        <label for="rx">Reação</label>
         <select id="rx">
           <option value="neut">Neutralização — HCl(aq) + NaOH(aq)</option>
           <option value="diss">Dissolução — KNO₃(s) em água</option>
         </select>
-        <label>Volume de HCl 1,000 mol·L⁻¹ / mL</label><input type="number" id="vh" value="50.00" step="0.01">
-        <label>Volume de NaOH 1,000 mol·L⁻¹ / mL</label><input type="number" id="vn" value="50.00" step="0.01">
-        <label>Massa de KNO₃ / g (só para a dissolução)</label><input type="number" id="mk" value="10.10" step="0.01">
-        <label>Volume de água para a dissolução / mL</label><input type="number" id="va" value="100.0" step="0.1">
-        <label>ΔT<sub>corrigido</sub> / °C</label><input type="number" id="dt" value="6.00" step="0.01">
+        <label for="vh">Volume de HCl 1,000 mol·L⁻¹ / mL</label><input type="number" id="vh" value="50.00" step="0.01">
+        <label for="vn">Volume de NaOH 1,000 mol·L⁻¹ / mL</label><input type="number" id="vn" value="50.00" step="0.01">
+        <label for="mk">Massa de KNO₃ / g (só para a dissolução)</label><input type="number" id="mk" value="10.10" step="0.01">
+        <label for="va">Volume de água para a dissolução / mL</label><input type="number" id="va" value="100.0" step="0.1">
+        <label for="dt">ΔT<sub>corrigido</sub> / °C</label><input type="number" id="dt" value="6.00" step="0.01">
         <div class="out" id="s4"></div>
       </div>
       <div>
         <table>
-          <tr><th>Referência</th><th>kJ·mol⁻¹</th><th>condição</th></tr>
+          <tr><th scope="col">Referência</th><th scope="col">kJ·mol⁻¹</th><th scope="col">condição</th></tr>
           <tr><td>NIST / CODATA (ΔH°f)</td><td>−55,84</td><td>diluição infinita</td></tr>
           <tr><td>Parker et al. (1956)</td><td>−56,60</td><td>extrapolado</td></tr>
           <tr><td>tabela de prática (NBS)</td><td>−57,30</td><td>≈ 1 mol·L⁻¹</td></tr>
@@ -174,19 +175,25 @@ function ccalMistura(mq, tq, mf, tf, teq){
   return CW*(mq*(tq-teq) - mf*(teq-tf))/(teq-tf);
 }
 
-/* ── curva T × t (modelo: deriva linear + salto no instante tau) ───── */
+/* ── curva T × t (modelo: deriva linear + PATAMAR exponencial pós-mistura) ─────
+   Antes de τ o calorímetro está abaixo da temperatura ambiente e AQUECE devagar
+   (+0,10 °C/min). Depois da mistura ele fica acima do ambiente e ESFRIA com a
+   deriva `leak`. A subida não é instantânea: a mistura e a homogenização levam
+   alguns segundos, modelados pela relaxação exponencial de constante TAU_EXP.
+   O patamar é DTM: T → T(τ) + DTM quando t − τ ≫ TAU_EXP.                */
 const TAUS = 2.0, T0 = 23.50, DTM = 6.00, N = 11;
+const TAU_EXP = 0.45;                    // min — mistura + homogenização térmica
 function pontos(leak){
   const p = [];
+  const T_tau = T0 + 0.10*TAUS;                             // reta do pré-período em τ
   for (let k=0;k<=N;k++){
     const t = k;
     let T;
     if (t <= TAUS){
-      T = T0 + 0.10*t;                                   // pré-inicial
+      T = T0 + 0.10*t;                                      // pré-período: aquece
     } else {
-      const base = 23.50 + 0.10*TAUS + (-leak*TAUS);     // reta final esticada para trás
-      const rise = DTM * Math.exp(-(t-TAUS)/1.15);       // relaxação após a mistura
-      T = base + leak*t + rise;
+      const dtm = t - TAUS;
+      T = T_tau + DTM*(1 - Math.exp(-dtm/TAU_EXP)) + leak*dtm;   // patamar + deriva
     }
     p.push([t, T]);
   }
@@ -198,6 +205,19 @@ function ajusta(pts){
   for (const [x,y] of pts){ sx+=x; sy+=y; sxx+=x*x; sxy+=x*y; }
   const a = (n*sxy - sx*sy)/(n*sxx - sx*sx);
   return [a, (sy - a*sx)/n];
+}
+/* ── a análise da curva, isolada para o autoteste poder exercitá-la ──────────
+   Devolve as duas retas, o ΔT pelas duas rotas e os pontos. Nada aqui lê o DOM:
+   o autoteste chama com qualquer deriva.                                    */
+function analisaCurva(leak){
+  const pts = pontos(leak);
+  const pre = ajusta(pts.slice(0,3));      // t = 0, 1, 2
+  const fim = ajusta(pts.slice(7));        // t = 7 … 11 (patamar já estabelecido)
+  const Tpre = pre[1] + pre[0]*TAUS;       // reta do pré-período esticada ATÉ τ
+  const Tfin = fim[1] + fim[0]*TAUS;       // reta final esticada PARA TRÁS até τ
+  const pico = Math.max(...pts.map(p=>p[1]));
+  return {pts:pts, pre:pre, fim:fim, Tpre:Tpre, Tfin:Tfin,
+          dTc:Tfin-Tpre, dTn:pico-pts[0][1], pico:pico};
 }
 
 function desenha(){
@@ -215,9 +235,9 @@ function desenha(){
   g.fillText('T / °C', 14, 44);
   for (let t=0;t<=10;t+=2){ g.fillText(String(t), X(t)-3, cv.height-40); }
   for (let T=23;T<=30;T+=1){ g.fillText(String(T), 34, Y(T)+4); }
-  const pts = pontos(leak);
+  const pts = analisaCurva(leak);
   // retas dos períodos
-  const pre = ajusta(pts.slice(0,3)), fim = ajusta(pts.slice(7));
+  const pre = pts.pre, fim = pts.fim;
   g.setLineDash([7,5]);
   g.strokeStyle='rgba(255,233,122,.95)'; g.lineWidth=2;
   g.beginPath(); g.moveTo(X(0), Y(pre[0]*0+pre[1])); g.lineTo(X(10), Y(pre[0]*10+pre[1])); g.stroke();
@@ -230,25 +250,31 @@ function desenha(){
   g.fillStyle='rgba(232,160,216,1)'; g.fillText('τ', X(TAUS)-3, 32);
   // pontos
   g.fillStyle='rgba(165,214,167,1)';
-  for (const [t,T] of pts){ g.beginPath(); g.arc(X(t), Y(T), 4, 0, 6.283); g.fill(); }
+  for (const [t,T] of pts.pts){ g.beginPath(); g.arc(X(t), Y(T), 4, 0, 6.283); g.fill(); }
   // ΔT corrigido
-  const Tpre = pre[1] + pre[0]*TAUS, Tfin = fim[1] + fim[0]*TAUS;
-  const dTc = Tfin - Tpre, pico = Math.max(...pts.map(p=>p[1])), dTn = pico - pts[0][1];
+  const Tpre = pts.Tpre, Tfin = pts.Tfin;
+  const dTc = pts.dTc, dTn = pts.dTn;
   g.strokeStyle='#f5f2e8'; g.lineWidth=3;
   g.beginPath(); g.moveTo(X(TAUS)+26, Y(Tpre)); g.lineTo(X(TAUS)+26, Y(Tfin)); g.stroke();
   g.fillStyle='#f5f2e8'; g.font='bold 13px "DejaVu Sans"';
   g.fillText('ΔT', X(TAUS)+34, (Y(Tpre)+Y(Tfin))/2);
-  // resultados
-  const Hc = dH(50, 50, dTc, ccal), Hn = dH(50, 50, dTn, ccal);
+  // resultados — o MESMO ΔT que o painel 3 usa (vh, vn lidos do painel 3)
+  const vh = +$('vh').value, vn = +$('vn').value;
+  const Hc = dH(vh, vn, dTc, ccal), Hn = dH(vh, vn, dTn, ccal);
   $('s1').innerHTML =
-    'ΔT corrigido (reta final esticada até τ) = <b>'+f(dTc)+' °C</b><br>'+
-    'ΔT de pico (pico − inicial), SEM correção = <b>'+f(dTn)+' °C</b><br>'+
+    'ΔT corrigido (as duas retas esticadas até τ) = <b>'+f(dTc)+' °C</b><br>'+
+    'ΔT de pico (máximo − T no instante 0), SEM esticar = <b>'+f(dTn)+' °C</b><br>'+
     'ΔH<sub>neut</sub> com correção  = <b>'+f(Hc)+' kJ·mol⁻¹</b><br>'+
     'ΔH<sub>neut</sub> sem correção   = <b>'+f(Hn)+' kJ·mol⁻¹</b><br>'+
     'erro de quem não corrige = <b>'+f(Math.abs(Hn-Hc))+' kJ·mol⁻¹</b> '+
     '(<b>'+f(Math.abs(Hn-Hc)/U_DH,1)+' × u(ΔH)</b>)<br>'+
-    '<span class="hint">u(ΔH) = '+f(U_DH)+' kJ·mol⁻¹ (k = 1). Compare com −57,30 (tabela de '+
-    'prática) e −55,84 (NIST, diluição infinita).</span>';
+    '<span class="hint">u(ΔH) = '+f(U_DH)+' kJ·mol⁻¹ (k = 1). ΔT<sub>corrigido</sub> NÃO muda '+
+    'quando a deriva muda — é isso que a extrapolação compra. Compare com −57,30 (tabela de '+
+    'prática) e −55,84 (NIST, diluição infinita).</span><br>'+
+    '<button id="usar" type="button" style="margin-top:9px;font:inherit;font-size:.86rem;'+
+    'padding:5px 11px;border-radius:8px;cursor:pointer;background:rgba(245,242,232,.12);'+
+    'color:#f5f2e8;border:1.5px solid rgba(245,242,232,.35)">usar este ΔT no painel 3 →</button>';
+  $('usar').onclick = () => { $('dt').value = dTc.toFixed(2); reacao(); };
   $('lv').textContent = f(leak,3).replace('.',',')+' °C/min';
   $('cv2').textContent = f(ccal,1)+' J·K⁻¹';
 }
@@ -342,6 +368,48 @@ function autoteste(){
     -57.18 + 56.15, 0.02), dH(50,50,6.00,46.0) - (-cTotal(m,46.0,0.98*CW)*6.00/0.05/1000), -1.03);
   t('Hess: ΔH₁ + ΔH₂', perto(-44.18 + dH(50,50,6.00,46.0), -101.36, 0.01),
     -44.18 + dH(50,50,6.00,46.0), -101.36);
+
+  /* ── A CURVA T × t — o que faltava. Cada caso compara VALOR ABSOLUTO com
+     tolerância declarada; nenhum pergunta só "anda na direção certa". ────── */
+  t('curva: ΔT corrigido (leak = 0) = 6,00 °C ± 0,02',
+    perto(analisaCurva(0).dTc, DTM, 0.02), analisaCurva(0).dTc, DTM);
+  t('curva: ΔT corrigido (leak = −0,05) = 6,00 °C ± 0,02',
+    perto(analisaCurva(-0.05).dTc, DTM, 0.02), analisaCurva(-0.05).dTc, DTM);
+  t('curva: ΔT corrigido (leak = −0,08, o padrão) = 6,00 °C ± 0,02',
+    perto(analisaCurva(-0.08).dTc, DTM, 0.02), analisaCurva(-0.08).dTc, DTM);
+  t('curva: ΔT corrigido (leak = −0,20, o extremo) = 6,00 °C ± 0,02',
+    perto(analisaCurva(-0.20).dTc, DTM, 0.02), analisaCurva(-0.20).dTc, DTM);
+  (function(){
+    const v = [0,-0.05,-0.08,-0.20].map(l => analisaCurva(l).dTc);
+    t('curva: ΔT corrigido é INDEPENDENTE da deriva (amplitude < 0,02 °C)',
+      (Math.max(...v) - Math.min(...v)) < 0.02, Math.max(...v)-Math.min(...v), 0);
+  })();
+  t('curva: com leak = 0 a curva TEM patamar (T(11) = T(7) ± 0,02 °C)',
+    perto(analisaCurva(0).pts[11][1], analisaCurva(0).pts[7][1], 0.02),
+    analisaCurva(0).pts[11][1], analisaCurva(0).pts[7][1]);
+  t('curva: o patamar vale T(τ) + 6,00 °C (leak = 0) ± 0,02',
+    perto(analisaCurva(0).pts[11][1] - (T0 + 0.10*TAUS), DTM, 0.02),
+    analisaCurva(0).pts[11][1] - (T0 + 0.10*TAUS), DTM);
+  t('curva: com leak = −0,20 a curva AINDA termina acima de T(0) (reação exotérmica)',
+    analisaCurva(-0.20).pts[11][1] > analisaCurva(-0.20).pts[0][1],
+    analisaCurva(-0.20).pts[11][1], analisaCurva(-0.20).pts[0][1]);
+  t('curva: ΔT de pico (leak = −0,20) = 5,73 °C ± 0,03',
+    perto(analisaCurva(-0.20).dTn, 5.7295, 0.03), analisaCurva(-0.20).dTn, 5.7295);
+  t('curva: ΔT de pico ≠ ΔT corrigido — o pico sozinho NÃO serve (leak = −0,08)',
+    Math.abs(analisaCurva(-0.08).dTn - DTM) > 0.02,
+    analisaCurva(-0.08).dTn, DTM);
+  t('ΔH_neut DA CURVA (leak = −0,08) = −57,18 kJ·mol⁻¹ ± 0,05',
+    perto(dH(50,50,analisaCurva(-0.08).dTc,46.0), -57.18, 0.05),
+    dH(50,50,analisaCurva(-0.08).dTc,46.0), -57.18);
+  t('ΔH_neut DA CURVA contra a tabela de prática (−57,30): |Δ| < 0,30 kJ·mol⁻¹',
+    Math.abs(dH(50,50,analisaCurva(-0.08).dTc,46.0) - REF.prat) < 0.30,
+    Math.abs(dH(50,50,analisaCurva(-0.08).dTc,46.0) - REF.prat), 0.30);
+  t('ΔH_neut DA CURVA está entre −56 e −58 (não é 40× menor)',
+    dH(50,50,analisaCurva(-0.08).dTc,46.0) > -58 && dH(50,50,analisaCurva(-0.08).dTc,46.0) < -56,
+    dH(50,50,analisaCurva(-0.08).dTc,46.0), -57.18);
+  t('ΔH sem correção (ΔT de pico, leak = −0,20) = −54,61 kJ·mol⁻¹ ± 0,05',
+    perto(dH(50,50,analisaCurva(-0.20).dTn,46.0), -54.606, 0.05),
+    dH(50,50,analisaCurva(-0.20).dTn,46.0), -54.606);
 
   const ok = casos.filter(c=>c.ok).length;
   let h = '<b>'+ok+'/'+casos.length+' casos aprovados</b>\n';
