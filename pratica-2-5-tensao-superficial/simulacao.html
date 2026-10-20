@@ -420,7 +420,7 @@ window.__pronto = false;
   // controle da inclinação de Gibbs (fora do grid, no painel 4)
   const c4 = document.querySelectorAll('.card')[4];
   const w = document.createElement('div');
-  w.innerHTML = '<label>inclinação da região linear / mN·m⁻¹ por década</label>' +
+  w.innerHTML = '<label for="incl">inclinação da região linear / mN·m⁻¹ por década</label>' +
     '<input type="range" id="incl" min="-40" max="-20" step="0.1" value="-32.7">' +
     '<div class="hint">–32,7 mN·m⁻¹ por década é o valor de um experimento didático publicado ' +
     'de peso da gota com SDS.</div>';
