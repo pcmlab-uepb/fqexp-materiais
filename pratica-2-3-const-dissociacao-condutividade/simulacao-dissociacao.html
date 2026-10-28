@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulação — Constante de Dissociação por Condutividade (Prática 2.3)</title>
+<style>
+  :root{--chalk:#f5f2e8;--yellow:#ffe97a;--pink:#e8a0d8;--cyan:#7fd4e8;--green:#a5d6a7;
+        --orange:#ffb74d;--ink:#16201b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:linear-gradient(160deg,#2f6e4f,#265c43 55%,#1f5540);color:var(--chalk);
+       font-family:"DejaVu Sans","Verdana",system-ui,sans-serif;line-height:1.5;padding:26px 18px 70px}
+  .wrap{max-width:1080px;margin:0 auto}
+  header{margin-bottom:20px}
+  .disc{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.45rem;margin:.25rem 0 .4rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.9rem;color:rgba(245,242,232,.75)}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.2);border-radius:16px;
+        padding:20px;margin-top:18px}
+  .card h2{font-size:1.06rem;color:var(--cyan);margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  canvas{background:rgba(15,40,30,.55);border-radius:12px;border:1px solid rgba(245,242,232,.18);
+         max-width:100%}
+  label{font-size:.85rem;color:rgba(245,242,232,.85);display:block;margin-top:10px}
+  input[type=number],select{width:150px;background:rgba(245,242,232,.08);
+        border:1.5px solid rgba(245,242,232,.3);color:var(--chalk);border-radius:8px;
+        padding:5px 8px;font:inherit;font-size:.9rem}
+  input[type=range]{width:100%;accent-color:#7fd4e8;margin-top:4px}
+  .out{font-size:.94rem;background:rgba(22,32,27,.42);border-left:5px solid var(--cyan);
+       border-radius:8px;padding:11px 13px;margin-top:12px;white-space:pre-wrap}
+  .out b{color:var(--yellow)}
+  .ok{color:var(--green)} .no{color:var(--pink)}
+  table{width:100%;border-collapse:collapse;font-size:.87rem;margin-top:10px}
+  th,td{padding:5px 7px;border-bottom:1px solid rgba(245,242,232,.14);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--yellow);font-weight:700}
+  .hint{font-size:.82rem;color:rgba(245,242,232,.62);margin-top:10px}
+  .k{color:var(--cyan);font-weight:700}
+  pre{font-size:.83rem;background:rgba(22,32,27,.5);border-radius:8px;padding:11px;overflow:auto;
+      white-space:pre-wrap}
+  #st{font-size:.9rem;color:rgba(245,242,232,.8);margin-top:10px}
+</style></head><body>
+<div role="note" class="aviso-beta" style="box-sizing:border-box;flex:0 0 100%;width:100%;background:rgba(255,233,122,.15);border-left:6px solid #ffe97a;border-radius:10px;padding:15px 22px;margin:0 0 20px;color:#f5f2e8;font-family:inherit;font-size:.95rem;line-height:1.5"><strong>Material em versão beta.</strong> Este é um material de apoio em revisão — o conteúdo e a forma ainda podem ser alterados. A fonte de estudo prioritária da disciplina continua sendo a apostila da disciplina (Manual 2020.2) e o livro-texto (Castellan; Atkins; Rangel).</div>
+<div class="wrap">
+  <header>
+    <div class="disc">Físico-Química Experimental · 2026.2 · UEPB/PCMLab</div>
+    <h1>Simulação — Prática 2.3: constante de dissociação por condutividade</h1>
+    <div class="meta">
+      Ácido acético em <b>quatro diluições ×4</b>; condutividade medida numa célula com eletrodos
+      de platina; <b>α = Λm/Λ°m</b>; <b>lei de diluição de Ostwald</b> Kc = c α²/(1 − α); e a
+      <b>correção de atividades</b> Ka = Kc·γ±² pela Debye-Hückel.<br>
+      <b>Fonte da técnica:</b> Manual20202 (apostila <i>em uso</i>) — «EXPERIMENTO Nº11:
+      CONDUTIVIDADE MOLAR EM DILUIÇÃO INFINITA», Eqs. 11.1 a 11.4, procedimento e Quadro 11.1.<br>
+      <b>Fonte da lei de Ostwald:</b> Shoemaker/Garland/Nibler, <i>Experiments in Physical
+      Chemistry</i>, 8ª ed., Exp. 17 — «Conductance of Solutions», Eqs. 3 a 13.<br>
+      Os números desta página são <b>modelos didáticos declarados</b> — não são medidas de bancada.
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>1 · O sistema e os dois erros que se pode injetar</h2>
+    <p style="font-size:.93rem">Ácido acético a 0,0500 mol·L⁻¹ e três diluições ×4 (pipeta de
+      25,0 mL em balão de 100,0 mL): <b>0,0500 · 0,0125 · 3,125×10⁻³ · 7,81×10⁻⁴ mol·L⁻¹</b>.
+      A célula tem constante <b>θ = 1,050 cm⁻¹</b>, obtida do padrão <b>KCl 0,100 mol·L⁻¹</b>
+      (κ = 12,852 mS·cm⁻¹ a 25,0 °C). Λ°m(HAc) = <b>390,7 S·cm²·mol⁻¹</b> (Kohlrausch).</p>
+    <div class="grid">
+      <div>
+        <label>Contaminação da água κ(água): <b id="lkw">0,0014 mS·cm⁻¹</b></label>
+        <input type="range" id="kw" min="0" max="0.005" step="0.0001" value="0.0014">
+        <label>Erro relativo na constante da célula θ: <b id="le">0,0 %</b></label>
+        <input type="range" id="e" min="-5" max="5" step="0.5" value="0">
+        <label>Ka verdadeiro do modelo, a 25,0 °C: <b id="lka">1,75×10⁻⁵ mol·L⁻¹</b></label>
+        <input type="range" id="ka" min="1.2" max="2.4" step="0.01" value="1.75">
+        <label style="margin-top:14px"><input type="checkbox" id="sub" checked>
+          subtrair κ(água) — o Quadro 11.1 do Exp 11</label>
+      </div>
+      <div class="out" id="s1"></div>
+    </div>
+    <div class="hint">A contaminação da água é a mesma em todos os pontos — mas ela é comparada
+      com sinais de tamanhos MUITO diferentes. É por isso que o Exp 11 manda medir a água antes.</div>
+  </div>
+
+  <div class="card">
+    <h2>2 · A tabela dos quatro pontos</h2>
+    <table id="tab">
+      <thead><tr><th>c / mol·L⁻¹</th><th>κ médido / mS·cm⁻¹</th><th>κ_esp / mS·cm⁻¹</th>
+      <th>Λm / S·cm²·mol⁻¹</th><th>α</th><th>Kc = cα²/(1−α) / mol·L⁻¹</th>
+      <th>Ka = Kc·γ±² / mol·L⁻¹</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="out" id="s2"></div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Ostwald puro: Kc NÃO é constante</h2>
+    <div class="grid">
+      <canvas id="g1" width="520" height="330"></canvas>
+      <div class="out" id="s3"></div>
+    </div>
+    <div class="hint">Os quatro Kc sobem em fila com a concentração. Ruído de bancada alternaria
+      de sinal; um desvio monótono e sistemático tem de ter causa que depende de c.</div>
+  </div>
+
+  <div class="card">
+    <h2>4 · A correção: Ka = Kc·γ±² é plano</h2>
+    <div class="grid">
+      <canvas id="g2" width="520" height="330"></canvas>
+      <div class="out" id="s4"></div>
+    </div>
+    <div class="hint">Mova a contaminação da água e o erro da célula: <b>Kc deforma, Ka corrigido
+      acompanha o modelo</b>. γ± cai de ≈ 0,988 a ≈ 0,965 nesta faixa de força iônica.</div>
+  </div>
+
+  <div class="card">
+    <h2>5 · Autoteste embutido</h2>
+    <pre id="at">rodando…</pre>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════════
+   MODELO DIDÁTICO DECLARADO
+   Λ°m(HAc) = 390,7 S·cm²·mol⁻¹ (25,0 °C) — Kohlrausch: 349,8 + 40,9  [S17, Eq. 6]
+   α resolve Ka = c α² γ±²/(1 − α),  γ± = 10^[−0,509 √I/(1+√I)],  I = αc  [S17, Eqs. 9-12]
+   κ(mS·cm⁻¹) = Λm · c      (porque Λm = κ_esp/c  ⇒  κ_esp = Λm·c)
+   A série medida carrega a dispersão DECLARADA de ±0,3 % do exemplo ilustrativo.
+══════════════════════════════════════════════════════════════════════════════ */
+const LAMB0 = 390.7;              // S·cm²·mol⁻¹
+const CS = [0.05, 0.0125, 3.125e-3, 7.8125e-4];
+const DESVIO = [0.0025, -0.0018, 0.0028, -0.0022];   // dispersão declarada (exemplo)
+const A_DEB = 0.509;
+const KA_LIT = 1.75e-5;
+const THETA = 1.05;               // cm⁻¹ (nominal)
+const KAPPA_KCL = 12.852;         // mS·cm⁻¹ (padrão)
+const R_KCL = 81.70;              // Ω (exemplo)
+
+function gama(I){                 // Debye-Hückel estendida, B ≈ 1
+  if(I <= 0) return 1;
+  const s = Math.sqrt(I);
+  return Math.pow(10, -A_DEB * s / (1 + s));
+}
+function alfaExato(c, Ka){         // bisseção em [0, 1)
+  let lo = 1e-12, hi = 0.999999;
+  for(let k = 0; k < 200; k++){
+    const m = 0.5 * (lo + hi);
+    const g = gama(m * c);
+    const f = c * m * m * g * g / (1 - m) - Ka;
+    if(f > 0) hi = m; else lo = m;
+  }
+  return 0.5 * (lo + hi);
+}
+function regressao(xs, ys){
+  const n = xs.length, mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  let sxx=0, sxy=0, syy=0;
+  for(let i=0;i<n;i++){ sxx += (xs[i]-mx)**2; sxy += (xs[i]-mx)*(ys[i]-my); syy += (ys[i]-my)**2; }
+  const b = sxy/sxx, a = my - b*mx;
+  let ssr = 0; for(let i=0;i<n;i++) ssr += (ys[i]-(a+b*xs[i]))**2;
+  return {a, b, r2: syy>0 ? 1 - ssr/syy : 0};
+}
+
+const $ = id => document.getElementById(id);
+let ultimo = null;
+
+function leEntradas(){
+  const kw = parseFloat($('kw').value);           // mS·cm⁻¹
+  const e  = parseFloat($('e').value) / 100;      // fração
+  const ka = parseFloat($('ka').value) * 1e-5;
+  const sub = $('sub').checked;
+  return {kw, e, ka, sub};
+}
+
+function serie({kw, e, ka, sub}){
+  const lin = [];
+  for(let i = 0; i < CS.length; i++){
+    const c  = CS[i];
+    const at = alfaExato(c, ka);                 // α verdadeiro do modelo
+    const kt = at * LAMB0 * c;                   // mS·cm⁻¹, sinal do ácido
+    const km = kt * (1 + DESVIO[i]) * (1 + e) + kw;   // leitura do aparelho
+    const ke = (sub === false) ? km : km - kw;   // κ_esp (Quadro 11.1 subtrai)
+    const Lam = ke / c;                          // Λm = 1000κ/c com κ em S·cm⁻¹
+    const ap = Lam / LAMB0;                      // α aparente
+    const Kc = c * ap * ap / (1 - ap);
+    const I  = ap * c;
+    const g  = gama(I);
+    lin.push({c, at, km, ke, Lam, ap, Kc, I, g, Ka: Kc * g * g, r: Math.sqrt(ap * c)});
+  }
+  const Kcs = lin.map(p => p.Kc), Kas = lin.map(p => p.Ka);
+  const fit = regressao(lin.map(p => p.r), Kcs.map(k => Math.log10(k)));
+  return {lin, Kcs, Kas, fit, KaExt: Math.pow(10, fit.a)};
+}
+
+function pintaKc(cvs, cs, ys, rotY, cor, alt){
+  const g = cvs.getContext('2d'), W = cvs.width, H = cvs.height;
+  g.clearRect(0,0,W,H);
+  const L=58, Rr=16, Tt=16, B=44;
+  const xs = cs.map(c => Math.log10(c));
+  const xmin = Math.min(...xs)-0.15, xmax = Math.max(...xs)+0.15;
+  const ymin = Math.min(...ys), ymax = Math.max(...ys);
+  const py = Math.max((ymax-ymin)*0.25, 1e-7);
+  const y0 = ymin-py, y1 = ymax+py;
+  const X = x => L + (x-xmin)/(xmax-xmin)*(W-L-Rr);
+  const Y = y => (H-B) - (y-y0)/(y1-y0)*((H-B)-Tt);
+  g.strokeStyle='rgba(245,242,232,.85)'; g.lineWidth=1.6;
+  g.beginPath(); g.moveTo(L,Tt); g.lineTo(L,H-B); g.lineTo(W-Rr,H-B); g.stroke();
+  g.fillStyle='rgba(245,242,232,.85)'; g.font='11px sans-serif';
+  g.fillText(rotY, 4, Tt+9);
+  g.fillText('log₁₀(c / mol·L⁻¹)', W-140, H-16);
+  for(let k=0;k<=4;k++){
+    const xv = xmin + k/4*(xmax-xmin);
+    g.fillText(Math.pow(10,xv).toExponential(1).replace('.',','), X(xv)-22, H-B+16);
+  }
+  for(let k=0;k<=3;k++){
+    const yv = y0 + k/3*(y1-y0);
+    g.fillText((yv*1e5).toFixed(2).replace('.',','), 2, Y(yv)+4);
+  }
+  if(alt){                                   // uma linha de nível (Ka plano)
+    g.strokeStyle=cor; g.lineWidth=2; g.setLineDash([6,4]);
+    g.beginPath(); g.moveTo(X(xmin), Y(alt)); g.lineTo(X(xmax), Y(alt)); g.stroke();
+    g.setLineDash([]);
+  }
+  g.strokeStyle=cor; g.lineWidth=2.2;
+  g.beginPath();
+  xs.forEach((x,i)=> i ? g.lineTo(X(x), Y(ys[i])) : g.moveTo(X(x), Y(ys[i])));
+  g.stroke();
+  g.fillStyle='#ffd966';
+  xs.forEach((x,i)=>{ g.beginPath(); g.arc(X(x), Y(ys[i]), 5, 0, 2*Math.PI); g.fill(); });
+}
+
+function desenha(){
+  const ent = leEntradas();
+  const S = serie(ent);
+  ultimo = {ent, S};
+
+  $('lkw').textContent = ent.kw.toFixed(4).replace('.',',') + ' mS·cm⁻¹';
+  $('le').textContent  = (ent.e*100).toFixed(1).replace('.',',') + ' %';
+  $('lka').textContent = (ent.ka*1e5).toFixed(2).replace('.',',') + '×10⁻⁵ mol·L⁻¹';
+
+  const R = THETA / (KAPPA_KCL / 1000);      // Ω, resistência do padrão no exemplo
+  const Rs = S.lin.map(p => THETA / (p.km / 1000));
+  const esp = 100 * (Math.max(...S.Kcs)/Math.min(...S.Kcs) - 1);
+  const espKa = 100 * (Math.max(...S.Kas)/Math.min(...S.Kas) - 1);
+  const medKc = S.Kcs.reduce((a,b)=>a+b,0)/4;
+
+  $('s1').innerHTML =
+    'θ da célula = <b>1,050 cm⁻¹</b>   (do padrão KCl 0,100 mol·L⁻¹, κ = 12,852 mS·cm⁻¹)\n' +
+    'R medido no padrão = <b>' + R.toFixed(2).replace('.',',') + ' Ω</b>   (exemplo)\n' +
+    'Λ°m(HAc) = <b>390,7 S·cm²·mol⁻¹</b>   (349,8 + 40,9 · Kohlrausch)\n' +
+    'α vai de <b>' + S.lin[0].ap.toFixed(4).replace('.',',') + '</b> (mais concentrado) a <b>' +
+    S.lin[3].ap.toFixed(4).replace('.',',') + '</b> (mais diluído)';
+
+  let th = '';
+  S.lin.forEach((p,i)=>{
+    th += '<tr><td>' + p.c.toExponential(3).replace('.',',').replace('e-','×10⁻') + '</td><td>' +
+      p.km.toFixed(5).replace('.',',') + '</td><td>' + p.ke.toFixed(5).replace('.',',') +
+      '</td><td>' + p.Lam.toFixed(3).replace('.',',') + '</td><td>' +
+      p.ap.toFixed(5).replace('.',',') + '</td><td>' +
+      (p.Kc*1e5).toFixed(3).replace('.',',') + '×10⁻⁵</td><td>' +
+      (p.Ka*1e5).toFixed(3).replace('.',',') + '×10⁻⁵</td></tr>';
+  });
+  $('tab').querySelector('tbody').innerHTML = th;
+
+  const sub = ent.sub !== false;
+  $('s2').innerHTML =
+    'κ(água) ' + (sub ? '<b>subtraído</b>' : '<b>NÃO subtraído</b>') +
+    ' — Quadro 11.1 do Exp 11\n' +
+    'espalhamento de Kc   = <b>' + esp.toFixed(2).replace('.',',') + ' %</b>   ' +
+    '(o que a lei de Ostwald pura devolve)\n' +
+    'espalhamento de Ka   = <b>' + espKa.toFixed(2).replace('.',',') + ' %</b>   ' +
+    '(depois de Ka = Kc·γ±²)\n' +
+    'correção da água no ponto mais diluído = <b>' +
+    (100*ent.kw/S.lin[3].km).toFixed(2).replace('.',',') + ' %</b>   ' +
+    '(no mais concentrado: ' + (100*ent.kw/S.lin[0].km).toFixed(2).replace('.',',') + ' %)\n' +
+    'R do ponto mais diluído = <b>' + (Rs[3]/1000).toFixed(2).replace('.',',') + ' kΩ</b>   ·   ' +
+    'mais concentrado = ' + (Rs[0]/1000).toFixed(2).replace('.',',') + ' kΩ';
+
+  const Kas = S.Kas.map(k => k*1e5);
+  pintaKc($('g1'), CS, S.Kcs.map(k => k*1e5), 'Kc / 10⁻⁵ mol·L⁻¹', '#e8a0d8', null);
+  pintaKc($('g2'), CS, Kas, 'Ka / 10⁻⁵ mol·L⁻¹', '#7fd4e8', S.Kas.reduce((a,b)=>a+b,0)/4*1e5);
+
+  $('s3').innerHTML =
+    'média de Kc = <b>' + (medKc*1e5).toFixed(3).replace('.',',') + '×10⁻⁵ mol·L⁻¹</b>\n' +
+    'Kc no mais concentrado = <b>' + (S.Kcs[0]*1e5).toFixed(3).replace('.',',') + '×10⁻⁵</b>\n' +
+    'Kc no mais diluído     = <b>' + (S.Kcs[3]*1e5).toFixed(3).replace('.',',') + '×10⁻⁵</b>\n' +
+    '→ os quatro formam uma FILA monótona: é a atividade, não o azar.';
+  $('s4').innerHTML =
+    'Ka = Kc·γ±² , média = <b>' + (S.Kas.reduce((a,b)=>a+b,0)/4*1e5).toFixed(3).replace('.',',') +
+    '×10⁻⁵ mol·L⁻¹</b>\n' +
+    'extrapolação log Kc × √(αc) → <b>' + (S.KaExt*1e5).toFixed(3).replace('.',',') +
+    '×10⁻⁵</b>  (R² = ' + S.fit.r2.toFixed(4).replace('.',',') + ')\n' +
+    'γ± vai de <b>' + S.lin[3].g.toFixed(4).replace('.',',') + '</b> (diluído) a <b>' +
+    S.lin[0].g.toFixed(4).replace('.',',') + '</b> (concentrado)\n' +
+    '→ a suposição de idealidade era o erro, não a bancada.';
+}
+
+/* ═══════════════════════ AUTOTESTE — roda DENTRO da página, sobre o mesmo código */
+function autoteste(){
+  const casos = [];
+  const t = (nome, ok, info) => casos.push({nome, ok: !!ok, info: info||''});
+  const E = {kw: 0.0014, e: 0, ka: KA_LIT, sub: true};
+  const S = serie(E);
+  const P = S.lin;
+
+  t('Λ°m(HAc) = 390,7 S·cm²·mol⁻¹', Math.abs(LAMB0 - 390.7) < 1e-9, LAMB0);
+  t('θ do padrão: θ = κ(KCl)·R = 1,050 cm⁻¹',
+    Math.abs(THETA*1000 - KAPPA_KCL*R_KCL/1000*1000) < 0.02,
+    (KAPPA_KCL*R_KCL/1000).toFixed(4));
+  t('α ADIMENSIONAL e em (0, 1) em todos os pontos',
+    P.every(p => p.ap > 0 && p.ap < 1));
+  t('α cresce quando c cai (ácido fraco)',
+    P.every((p,i) => i === 0 || p.ap > P[i-1].ap),
+    P.map(p => p.ap.toFixed(4)).join(' < '));
+  t('Λm = κ_esp / c  (identidade ponto a ponto)',
+    P.every(p => Math.abs(p.Lam - p.ke/p.c) < 1e-12));
+  t('Λm e Λ°m com a MESMA unidade: a razão α cancela o fator',
+    P.every(p => Math.abs(p.ap - p.Lam/LAMB0) < 1e-12));
+  t('I = α·c (força iônica do ácido 1-1)',
+    P.every(p => Math.abs(p.I - p.ap*p.c) < 1e-15));
+  t('γ± ≤ 1 e cai com a força iônica',
+    P.every(p => p.g <= 1) && P[0].g < P[3].g, P.map(p=>p.g.toFixed(4)).join(' > '));
+  t('γ± → 1 quando I → 0', Math.abs(gama(0) - 1) < 1e-12);
+  t('Kc = c·α²/(1−α)  (lei de diluição de Ostwald)',
+    P.every(p => Math.abs(p.Kc - p.c*p.ap*p.ap/(1-p.ap)) < 1e-18));
+  t('Kc NÃO é constante: espalha mais de 4 %',
+    (Math.max(...S.Kcs)/Math.min(...S.Kcs) - 1) > 0.04,
+    (100*(Math.max(...S.Kcs)/Math.min(...S.Kcs)-1)).toFixed(2) + ' %');
+  t('Kc cresce com c (fila monótona, não ruído)', S.Kcs[0] > S.Kcs[3],
+    S.Kcs.map(k => (k*1e5).toFixed(3)).join(' > '));
+  t('Ka = Kc·γ±² é PLANO: espalha menos de 1,5 %',
+    (Math.max(...S.Kas)/Math.min(...S.Kas) - 1) < 0.015,
+    (100*(Math.max(...S.Kas)/Math.min(...S.Kas)-1)).toFixed(2) + ' %');
+  t('média de Ka a menos de 1 % de 1,75×10⁻⁵ mol·L⁻¹',
+    Math.abs(S.Kas.reduce((a,b)=>a+b,0)/4/KA_LIT - 1) < 0.01,
+    ((S.Kas.reduce((a,b)=>a+b,0)/4)*1e5).toFixed(3) + '×10⁻⁵');
+  t('a média de Kc SUPERA Ka (o erro é para MAIS)',
+    S.Kcs.reduce((a,b)=>a+b,0)/4 > S.Kas.reduce((a,b)=>a+b,0)/4,
+    '+' + (100*(S.Kcs.reduce((a,b)=>a+b,0)/4/(S.Kas.reduce((a,b)=>a+b,0)/4)-1)).toFixed(2) + ' %');
+  t('extrapolação log Kc × √(αc) recupera Ka a menos de 2 %',
+    Math.abs(S.KaExt/KA_LIT - 1) < 0.02, (S.KaExt*1e5).toFixed(3) + '×10⁻⁵');
+  t('a inclinação do ajuste é POSITIVA (correção de atividades)',
+    S.fit.b > 0.3, S.fit.b.toFixed(3));
+  t('κ_esp = κ_medido − κ_água  ⇒  κ_esp < κ_medido',
+    P.every(p => p.ke < p.km));
+  t('a água pesa MAIS no ponto mais diluído',
+    (E.kw/P[3].km) > (E.kw/P[0].km),
+    (100*E.kw/P[3].km).toFixed(2) + ' % vs ' + (100*E.kw/P[0].km).toFixed(2) + ' %');
+  t('mais contaminação ⇒ Kc espalha MAIS (o defeito aparece na série)',
+    (() => { const A = serie({kw: 0.0014, e: 0, ka: KA_LIT, sub: false});
+             const B = serie({kw: 0.0045, e: 0, ka: KA_LIT, sub: false});
+             return (Math.max(...B.Kcs)/Math.min(...B.Kcs)) >
+                    (Math.max(...A.Kcs)/Math.min(...A.Kcs)); })());
+  t('erro na constante da célula INFLACIONA Ka (é sistemático)',
+    (() => { const S2 = serie({kw: 0.0014, e: 0.03, ka: KA_LIT});
+             return S2.KaExt > S.KaExt; })());
+  t('SUBTRAINDO a água, o espalhamento não depende de κ(água) — a correção funciona',
+    (() => { const A = serie({kw: 0.0014, e: 0, ka: KA_LIT, sub: true});
+             const B = serie({kw: 0.0045, e: 0, ka: KA_LIT, sub: true});
+             const eA = Math.max(...A.Kcs)/Math.min(...A.Kcs);
+             const eB = Math.max(...B.Kcs)/Math.min(...B.Kcs);
+             return Math.abs(eB/eA - 1) < 1e-9; })());
+  t('Kc tem unidade de concentração (mol·L⁻¹), nunca adimensional',
+    Math.abs(P[0].Kc/P[0].c - Math.pow(P[0].ap,2)/(1-P[0].ap)/1) < 1e-12);
+  t('R = θ/κ e o mais diluído tem a MAIOR resistência',
+    (THETA/(P[3].km/1000)) > (THETA/(P[0].km/1000)),
+    ((THETA/(P[3].km/1000))/1000).toFixed(2) + ' kΩ > ' +
+    ((THETA/(P[0].km/1000))/1000).toFixed(2) + ' kΩ');
+
+  const ok = casos.filter(c => c.ok).length;
+  const linhas = casos.map((c,i) =>
+    (c.ok ? '  PASS ' : '  FAIL ') + String(i+1).padStart(2,'0') + ' · ' + c.nome +
+    (c.info ? '   [' + c.info + ']' : '')).join('\n');
+  $('at').innerHTML = casos.length + ' casos · ' + ok + ' aprovados · ' +
+    (casos.length-ok) + ' falharam\n' + linhas;
+  window.__casos = casos;
+  window.__autoteste = (ok === casos.length);
+  return window.__autoteste;
+}
+
+window.__pronto = false;
+(function init(){
+  ['kw','e','ka','sub'].forEach(id => { const el = $(id);
+    el.addEventListener('input', desenha); el.addEventListener('change', desenha); });
+  desenha();
+  autoteste();
+  window.__pronto = true;
+})();
+</script></body></html>

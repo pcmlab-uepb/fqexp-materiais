@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulação — Tensão Superficial pelo peso da gota (Prática 2.5)</title>
+<style>
+  :root{--chalk:#f5f2e8;--yellow:#ffe97a;--pink:#e8a0d8;--cyan:#7fd4e8;--green:#a5d6a7;
+        --orange:#ffb74d;--ink:#16201b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:linear-gradient(160deg,#2f6e4f,#265c43 55%,#1f5540);color:var(--chalk);
+       font-family:"DejaVu Sans","Verdana",system-ui,sans-serif;line-height:1.5;padding:26px 18px 70px}
+  .wrap{max-width:1080px;margin:0 auto}
+  header{margin-bottom:20px}
+  .disc{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.45rem;margin:.25rem 0 .4rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.9rem;color:rgba(245,242,232,.75)}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.2);border-radius:16px;
+        padding:20px;margin-top:18px}
+  .card h2{font-size:1.06rem;color:var(--cyan);margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  canvas{background:rgba(15,40,30,.55);border-radius:12px;border:1px solid rgba(245,242,232,.18);
+         max-width:100%}
+  label{font-size:.85rem;color:rgba(245,242,232,.85);display:block;margin-top:10px}
+  input[type=number],select{width:170px;background:rgba(245,242,232,.08);
+        border:1.5px solid rgba(245,242,232,.3);color:var(--chalk);border-radius:8px;
+        padding:5px 8px;font:inherit;font-size:.9rem}
+  input[type=range]{width:100%;accent-color:#7fd4e8;margin-top:4px}
+  .out{font-size:.94rem;background:rgba(22,32,27,.42);border-left:5px solid var(--cyan);
+       border-radius:8px;padding:11px 13px;margin-top:12px;white-space:pre-wrap}
+  .out b{color:var(--yellow)}
+  .ok{color:var(--green)} .no{color:var(--pink)}
+  table{width:100%;border-collapse:collapse;font-size:.87rem;margin-top:10px}
+  th,td{padding:5px 7px;border-bottom:1px solid rgba(245,242,232,.14);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--yellow);font-weight:700}
+  .hint{font-size:.82rem;color:rgba(245,242,232,.62);margin-top:10px}
+  .k{color:var(--cyan);font-weight:700}
+  pre{font-size:.83rem;background:rgba(22,32,27,.5);border-radius:8px;padding:11px;overflow:auto;
+      white-space:pre-wrap}
+  #st{font-size:.9rem;color:rgba(245,242,232,.8);margin-top:10px}
+</style></head><body>
+<div role="note" class="aviso-beta" style="box-sizing:border-box;flex:0 0 100%;width:100%;background:rgba(255,233,122,.15);border-left:6px solid #ffe97a;border-radius:10px;padding:15px 22px;margin:0 0 20px;color:#f5f2e8;font-family:inherit;font-size:.95rem;line-height:1.5"><strong>Material em versão beta.</strong> Este é um material de apoio em revisão — o conteúdo e a forma ainda podem ser alterados. A fonte de estudo prioritária da disciplina continua sendo a apostila da disciplina (Manual 2020.2) e o livro-texto (Castellan; Atkins; Rangel).</div>
+<div class="wrap">
+  <header>
+    <div class="disc">Físico-Química Experimental · 2026.2 · UEPB/PCMLab</div>
+    <h1>Simulação — Prática 2.5: tensão superficial pelo peso da gota</h1>
+    <div class="meta">
+      Massa de 20 gotas, <b>fator de correção de Harkins–Brown</b> f(r/V<sup>1/3</sup>), método
+      relativo e a hipótese escondida, isoterma de Gibbs e <b>CMC</b>.<br>
+      <b>Fonte de procedimento:</b> Manual20202 (apostila <i>em uso</i> da disciplina) —
+      «EXPERIMENTO Nº 05: TENSÃO SUPERFICIAL», linhas 1763–2174. A curva de f é de Harkins e
+      Brown (1919); a região linear de γ × log c e a isoterma de Gibbs, de Shoemaker Exp. 25 e
+      Bettelheim Exp. 21. O ensaio de tensoativo <b>não existe no manual</b>.<br>
+      Os números desta página são <b>modelos didáticos declarados</b> — não são medidas de bancada.
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>1 · O peso da gota e o fator que o manual não imprime</h2>
+    <p style="font-size:.93rem">γ = m·g / (2π·r·f), com f = f(r/V<sup>1/3</sup>) na curva de
+      Harkins–Brown: <b>f = 0,721 em r/V<sup>1/3</sup> = 0,310</b> e <b>f = 0,535 em
+      r/V<sup>1/3</sup> = 1,225</b>. A faixa recomendada de ponteira é r/V<sup>1/3</sup> de 0,65 a 0,95.</p>
+    <div class="grid">
+      <div>
+        <label>Líquido</label>
+        <select id="L"></select>
+        <label>Temperatura: <b id="lbT">25,0 °C</b></label>
+        <input type="range" id="T" min="15" max="35" step="0.5" value="25">
+        <label>Raio da ponteira / mm</label>
+        <input type="number" id="rmm" value="1.20" step="0.05" min="0.30" max="2.50">
+        <label>Vazão (0 = gota em repouso)</label>
+        <select id="vaz"><option value="1">lenta — f da tabela</option>
+          <option value="1.04">rápida — f +4 %</option></select>
+      </div>
+      <div class="out" id="s1"></div>
+    </div>
+    <div class="hint">A massa da gota sai do MODELO FORWARD: resolve-se V tal que
+      γ(T, líquido) = ρVg/(2πr·f(r/V<sup>1/3</sup>)). É o mesmo modelo de `calc_2_5.py`.</div>
+  </div>
+
+  <div class="card">
+    <h2>2 · A curva de Harkins–Brown e os cinco líquidos</h2>
+    <div class="grid">
+      <canvas id="g1" width="520" height="340"></canvas>
+      <div class="out" id="s2"></div>
+    </div>
+    <div class="hint">Note que os pontos da água e das soluções de NaCl ficam <b>juntos</b>
+      (gota de mesmo tamanho) e os dos álcoois e da acetona ficam <b>longe</b> — é aí que o
+      método relativo perde a exatidão.</div>
+  </div>
+
+  <div class="card">
+    <h2>3 · A tabela: γ ingênua, corrigida e relativa</h2>
+    <table id="tab">
+      <thead><tr><th>Líquido</th><th>m(20 gotas)/g</th><th>V da gota/µL</th>
+      <th>r/V<sup>1/3</sup></th><th>f</th><th>γ ingênua</th><th>γ corrigida</th><th>γ relativa</th>
+      <th>erro da relativa</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="out" id="s3"></div>
+  </div>
+
+  <div class="card">
+    <h2>4 · A isoterma de Gibbs e a CMC</h2>
+    <div class="grid">
+      <canvas id="g2" width="520" height="340"></canvas>
+      <div class="out" id="s4"></div>
+    </div>
+    <div class="hint">Mexa na inclinação da região linear e veja <b>Γ e a área por molécula</b>
+      mudarem; mexa no fator 2 e veja a área cair quase à metade. A CMC sai da
+      <b>interseção</b> da reta com o patamar — não do joelho.</div>
+  </div>
+
+  <div class="card">
+    <h2>5 · Autoteste embutido</h2>
+    <pre id="at">rodando…</pre>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════════
+   MODELO DIDÁTICO DECLARADO
+     · f(r/V^(1/3)) linear das duas pontas publicadas de Harkins e Brown
+     · γ(T) = γ25 + (dγ/dT)(T − 25)      [coeficientes da Tabela 5.1 do manual]
+     · γ = ρ·V·g / (2π·r·f)              [Harkins e Brown, 1919]
+     · Γ = −(1/2·2,303·R·T)·dγ/d(log10 c)  [Shoemaker Eq. 14; iônico 1:1 ⇒ fator 2]
+     · A = 1/(Γ·N_A)
+   ══════════════════════════════════════════════════════════════════════════════ */
+const R = 8.314462618, NA = 6.02214076e23, G = 9.80665;
+const HB = {xlo:0.310, flo:0.721, xhi:1.225, fhi:0.535};
+const HBINC = (HB.fhi - HB.flo)/(HB.xhi - HB.xlo);
+function fHB(x){ return Math.min(HB.flo, Math.max(HB.fhi, HB.flo + HBINC*(x - HB.xlo))); }
+function xDeF(f){ return HB.xlo + (f - HB.flo)/HBINC; }
+
+const LIQ = [
+  {rot:'água',    nome:'Água destilada',  rho:0.99705, g25:71.97, dT:-0.157},
+  {rot:'nacl5',   nome:'NaCl 5 %',        rho:1.0308,  g25:73.425, dT:-0.157},
+  {rot:'nacl30',  nome:'NaCl 30 %',       rho:1.188,   g25:80.70,  dT:-0.140},
+  {rot:'alc40',   nome:'Álcool 40 %',     rho:0.9480,  g25:32.00,  dT:-0.090},
+  {rot:'alcPA',   nome:'Álcool PA 95 %',  rho:0.8161,  g25:22.80,  dT:-0.095},
+  {rot:'acetona', nome:'Acetona',         rho:0.7845,  g25:23.00,  dT:-0.140}
+];
+const CMC = 8.2e-3, GMAT = 38.0, INCL = -32.7;
+const GRADE = [0.10,0.30,0.60,1.00,1.50,2.50,4.00,6.00,10.00,20.00,40.00];
+
+function gammaT(L, T){ return L.g25 + L.dT*(T - 25); }
+
+/* MODELO FORWARD: resolve V (m³) para o líquido a uma temperatura e geometria dadas */
+function forward(L, T, r_m, vaz){
+  const gm = gammaT(L, T)*1e-3;
+  let V = 3.0e-8;
+  for(let k=0;k<80;k++){
+    const x = r_m/Math.cbrt(V);
+    const f = Math.min(0.721, fHB(x)*vaz);
+    const m = gm*2*Math.PI*r_m*f/G;
+    const Vn = m/(L.rho*1000);
+    if(Math.abs(Vn-V) < 1e-18){ V = Vn; break; }
+    V = Vn;
+  }
+  const x = r_m/Math.cbrt(V);
+  const f = Math.min(0.721, fHB(x)*vaz);
+  const m = gm*2*Math.PI*r_m*f/G;
+  const ing = (m*G)/(2*Math.PI*r_m)*1e3;      // mN/m, sem o fator
+  return {m, V, x, f, ing, corr: ing/f, rho:L.rho, g:gammaT(L,T)};
+}
+
+/* ── estado da interface */
+const $ = id => document.getElementById(id);
+let ultimo = null;
+
+LIQ.forEach((L,i)=>{
+  const o = document.createElement('option'); o.value = i; o.textContent = L.nome;
+  if(L.rot === 'água') o.selected = true; $('L').appendChild(o);
+});
+
+function leEntradas(){
+  const T = parseFloat($('T').value);
+  const r_m = parseFloat($('rmm').value)/1000 || 1.2e-3;
+  const vaz = parseFloat($('vaz').value) || 1;
+  return {T, r_m, vaz};
+}
+
+function serie(T, r_m, vaz){ return LIQ.map(L => Object.assign({L}, forward(L, T, r_m, vaz))); }
+
+function br(x,d){ return x.toFixed(d).replace('.',','); }
+function ex(x,d){ return x.toExponential(d).replace('.',','); }
+
+function pintaHB(cvs, T, r_m, vaz){
+  const g = cvs.getContext('2d'), W = cvs.width, H = cvs.height;
+  g.clearRect(0,0,W,H);
+  const L=52, Rr=14, Tt=16, B=40;
+  const xmin=0.25, xmax=1.30, ymin=0.50, ymax=0.75;
+  const X = x => L + (x-xmin)/(xmax-xmin)*(W-L-Rr);
+  const Y = y => (H-B) - (y-ymin)/(ymax-ymin)*((H-B)-Tt);
+  g.strokeStyle='rgba(245,242,232,.85)'; g.lineWidth=1.6;
+  g.beginPath(); g.moveTo(L,Tt); g.lineTo(L,H-B); g.lineTo(W-Rr,H-B); g.stroke();
+  g.fillStyle='rgba(245,242,232,.85)'; g.font='11px sans-serif';
+  g.fillText('f', 8, Tt+10); g.fillText('r/V^(1/3)', W-58, H-14);
+  for(const v of [0.4,0.6,0.8,1.0,1.2]) g.fillText(v.toFixed(1), X(v)-8, H-B+15);
+  for(const v of [0.55,0.60,0.65,0.70,0.75]) g.fillText(v.toFixed(2).replace('.',','), 4, Y(v)+4);
+  // faixa recomendada
+  g.fillStyle='rgba(165,214,167,.16)';
+  g.fillRect(X(0.65), Y(0.721), X(0.95)-X(0.65), Y(0.535)-Y(0.721));
+  // a curva publicada
+  g.strokeStyle='#7fd4e8'; g.lineWidth=2.4;
+  g.beginPath(); g.moveTo(X(HB.xlo), Y(HB.flo)); g.lineTo(X(HB.xhi), Y(HB.fhi)); g.stroke();
+  // os líquidos
+  const cores = ['#ffd966','#ffd966','#a5d6a7','#e8a0d8','#e8a0d8','#ffb74d'];
+  const s = serie(T, r_m, vaz);
+  s.forEach((d,i)=>{
+    g.fillStyle = cores[i];
+    g.beginPath(); g.arc(X(d.x), Y(d.f), 4.5, 0, 2*Math.PI); g.fill();
+  });
+}
+
+/* ── a curva do tensoativo e a CMC */
+function curvaSDS(incl){
+  return GRADE.map(c => ({
+    c,
+    g: (c*1e-3 >= CMC) ? GMAT : GMAT + Math.abs(incl)*(Math.log10(CMC) - Math.log10(c*1e-3))
+  }));
+}
+function reta(pts){
+  const n = pts.length;
+  const mx = pts.reduce((a,p)=>a+Math.log10(p.c*1e-3),0)/n;
+  const my = pts.reduce((a,p)=>a+p.g,0)/n;
+  let sxx=0,sxy=0,syy=0;
+  for(const p of pts){ const x=Math.log10(p.c*1e-3), y=p.g;
+    sxx += (x-mx)**2; sxy += (x-mx)*(y-my); syy += (y-my)**2; }
+  const b = sxy/sxx, a = my - b*mx;
+  let ssr=0; for(const p of pts){ const x=Math.log10(p.c*1e-3); ssr += (p.g-(a+b*x))**2; }
+  return {a,b,r2: syy>0 ? 1-ssr/syy : 0};
+}
+function cmcDe(incl){
+  const s = curvaSDS(incl);
+  const lin = s.filter(p=>p.c>=1.5 && p.c<=6.0);
+  const pat = s.filter(p=>p.c>=10.0);
+  const r1 = reta(lin), r2 = reta(pat);
+  const lc = (r2.a - r1.a)/(r1.b - r2.b);
+  const gmin = Math.min.apply(null, s.map(p=>p.g));
+  const joelho = Math.min.apply(null, s.filter(p=>p.g <= gmin + 0.5).map(p=>p.c));
+  return {cmc: Math.pow(10, lc)*1e3, joelho, r1, r2, lin, pat};
+}
+function gammaDe(incl, T_C, fator2){
+  const dgdl = incl*1e-3;                      // N/m por década de log10 c
+  const ln10 = 2.302585093;                    // ln c = ln10 · log10 c  ⇒  dγ/dln c = (dγ/dlog10 c)/ln10
+  const dg_dlnc = dgdl/ln10;
+  const fator = fator2 ? 2 : 1;
+  // Γ = −(1/fator·R·T)·dγ/d ln c   ·   fator 2 = tensoativo iônico 1:1 sem eletrólito de fundo
+  return Math.abs(dg_dlnc)/(fator*R*(T_C+273.15));
+}
+function areaNM2(Gamma){ return 1/(Gamma*NA)*1e18; }
+
+function pintaGibbs(cvs, incl, cm){
+  const g = cvs.getContext('2d'), W = cvs.width, H = cvs.height;
+  g.clearRect(0,0,W,H);
+  const L=54, Rr=14, Tt=16, B=40;
+  const lx0=-4.2, lx1=-1.2, gy0=30, gy1=78;
+  const X = lc => L + (lc-lx0)/(lx1-lx0)*(W-L-Rr);
+  const Y = v => (H-B) - (v-gy0)/(gy1-gy0)*((H-B)-Tt);
+  g.strokeStyle='rgba(245,242,232,.85)'; g.lineWidth=1.6;
+  g.beginPath(); g.moveTo(L,Tt); g.lineTo(L,H-B); g.lineTo(W-Rr,H-B); g.stroke();
+  g.fillStyle='rgba(245,242,232,.85)'; g.font='11px sans-serif';
+  g.fillText('γ/mN·m⁻¹', 4, Tt+10); g.fillText('log c', W-40, H-14);
+  for(const lc of [-4,-3,-2,-1.5]) g.fillText(Math.pow(10,lc).toFixed(lc===-1.5?1:1).replace('.',','), X(lc)-9, H-B+15);
+  for(const v of [30,40,50,60,70]) g.fillText(String(v), 8, Y(v)+4);
+  const s = curvaSDS(incl);
+  g.fillStyle='#ffd966';
+  for(const p of s){ g.beginPath(); g.arc(X(Math.log10(p.c*1e-3)), Y(p.g), 4, 0, 2*Math.PI); g.fill(); }
+  // as duas retas
+  const lcA = Math.log10(1.5e-3), lcB = Math.log10(8.2e-3);
+  g.strokeStyle='#7fd4e8'; g.lineWidth=2.2;
+  g.beginPath(); g.moveTo(X(lcA), Y(cm.r1.a + cm.r1.b*lcA));
+  g.lineTo(X(lcB), Y(cm.r1.a + cm.r1.b*lcB)); g.stroke();
+  g.strokeStyle='#e8a0d8';
+  g.beginPath(); g.moveTo(X(Math.log10(10e-3)), Y(cm.r2.a + cm.r2.b*Math.log10(10e-3)));
+  g.lineTo(X(Math.log10(40e-3)), Y(cm.r2.a + cm.r2.b*Math.log10(40e-3))); g.stroke();
+  // a CMC
+  const lcC = Math.log10(cm.cmc*1e-3);
+  g.strokeStyle='#a5d6a7'; g.setLineDash([5,4]); g.lineWidth=1.8;
+  g.beginPath(); g.moveTo(X(lcC), H-B); g.lineTo(X(lcC), Y(GMAT)); g.stroke();
+  g.setLineDash([]);
+  g.fillStyle='#a5d6a7';
+  g.beginPath(); g.arc(X(lcC), Y(GMAT), 5.5, 0, 2*Math.PI); g.fill();
+}
+
+function desenha(){
+  const {T, r_m, vaz} = leEntradas();
+  const s = serie(T, r_m, vaz);
+  const ag = s[0];
+  ultimo = {T, r_m, vaz, s};
+
+  $('lbT').textContent = T.toFixed(1).replace('.',',') + ' °C';
+  const repr = Math.abs(ag.corr - ag.g)/ag.g*100;
+  $('s1').innerHTML =
+    'líquido: <b>' + ag.L.nome + '</b>   a <b>' + br(T,1) + ' °C</b>\n' +
+    'γ da referência nessa T = <b>' + br(ag.g,2) + ' mN·m⁻¹</b>\n' +
+    'm de 20 gotas = <b>' + br(ag.m*20*1000,4) + ' g</b>   ·   V da gota = <b>' +
+      br(ag.V*1e9,2) + ' µL</b>\n' +
+    'r/V^(1/3) = <b>' + br(ag.x,3) + '</b>   ⇒   f = <b>' + br(ag.f,3) + '</b>\n' +
+    'γ INGÊNUA (sem f) = <b>' + br(ag.ing,2) + ' mN·m⁻¹</b>   (' +
+      br((ag.ing-ag.g)/ag.g*100,1) + ' %)\n' +
+    'γ CORRIGIDA = <b>' + br(ag.corr,2) + ' mN·m⁻¹</b>   ⇒  confere a ' + br(repr,2) + ' %';
+
+  pintaHB($('g1'), T, r_m, vaz);
+
+  // a γ RELATIVA é γ_água(tabelada) · m_i/m_água
+  let th = '';
+  s.forEach(d=>{
+    const rel = ag.g * d.m/ag.m;
+    const err = (rel - d.g)/d.g*100;
+    th += '<tr><td>' + d.L.nome + '</td><td>' + br(d.m*20*1000,4) + '</td><td>' +
+      br(d.V*1e9,2) + '</td><td>' + br(d.x,3) + '</td><td>' + br(d.f,3) + '</td><td>' +
+      br(d.ing,2) + '</td><td>' + br(d.corr,2) + '</td><td>' + br(rel,2) + '</td><td class="' +
+      (Math.abs(err)<1 ? 'ok' : 'no') + '">' + br(err,2) + ' %</td></tr>';
+  });
+  $('tab').querySelector('tbody').innerHTML = th;
+
+  const pior = s.filter(d=>d.L.rot!=='água')
+                .map(d=>({n:d.L.nome, e:(ag.g*d.m/ag.m - d.g)/d.g*100}))
+                .sort((a,b)=>a.e-b.e)[0];
+  $('s2').innerHTML =
+    'a gota da água tem <b>' + br(ag.V*1e9,2) + ' µL</b> e a do álcool PA, <b>' +
+      br(s[4].V*1e9,2) + ' µL</b> — ' + br(ag.V/s[4].V,2) + '× menor\n' +
+    'f vai de <b>' + br(ag.f,3) + '</b> (água) a <b>' + br(s[4].f,3) + '</b> (álcool PA)\n' +
+    '⇒ o método relativo NÃO é igualmente exato para as duas séries';
+
+  $('s3').innerHTML =
+    'o método relativo acerta as soluções de NaCl (gota do mesmo tamanho da água) e erra no\n' +
+    'álcool e na acetona (gota 2,5 a 2,7× menor em volume): pior caso <b>' + pior.n + ', ' +
+      br(pior.e,2) + ' %</b>\n' +
+    'γ_relativa = γ_água(tabelada) × m_i/m_água — e o fator f só cancela se f_água = f_i.';
+
+  // ── a parte de Gibbs
+  const incl = parseFloat($('incl').value);
+  const cm = cmcDe(incl);
+  const G2 = gammaDe(incl, T, true), G1 = gammaDe(incl, T, false);
+  ultimo.cm = cm; ultimo.incl = incl; ultimo.G2 = G2; ultimo.G1 = G1;
+  pintaGibbs($('g2'), incl, cm);
+  $('s4').innerHTML =
+    'inclinação da região linear = <b>' + br(incl,2) + ' mN·m⁻¹ por década</b>   R² = <b>' +
+      cm.r1.r2.toFixed(5).replace('.',',') + '</b>\n' +
+    'CMC pela INTERSEÇÃO das duas retas = <b>' + br(cm.cmc,2) + ' mmol·L⁻¹</b>\n' +
+    'CMC pelo JOELHO (menor γ) = <b>' + br(cm.joelho,2) + ' mmol·L⁻¹</b>   (' +
+      br((cm.joelho/cm.cmc-1)*100,1) + ' % acima)\n' +
+    'Γ com o fator 2 = <b>' + ex(G2,2) + ' mol·m⁻²</b>   ⇒  A = <b>' + br(areaNM2(G2),3) + ' nm²</b>\n' +
+    'Γ sem o fator 2 = <b>' + ex(G1,2) + ' mol·m⁻²</b>   ⇒  A = <b>' + br(areaNM2(G1),3) + ' nm²</b>\n' +
+    'literatura (peso da gota com SDS): Γ = 3,1e-6 mol·m⁻²  ·  A = 0,53 nm²';
+}
+
+/* ═══════════════════════ AUTOTESTE — roda DENTRO da página, sobre o mesmo código */
+function autoteste(){
+  const casos = [];
+  const t = (nome, ok, info) => casos.push({nome, ok: !!ok, info: info||''});
+
+  // ── Harkins–Brown
+  t('f = 0,721 em r/V^(1/3) = 0,310', Math.abs(fHB(0.310) - 0.721) < 1e-9);
+  t('f = 0,535 em r/V^(1/3) = 1,225', Math.abs(fHB(1.225) - 0.535) < 1e-9);
+  t('f decresce com r/V^(1/3)', fHB(0.35) > fHB(0.60) && fHB(0.60) > fHB(1.00),
+    fHB(0.35).toFixed(3) + ' > ' + fHB(0.60).toFixed(3));
+  t('a inversa xDeF recupera o ponto', Math.abs(fHB(xDeF(0.60)) - 0.60) < 1e-6);
+
+  // ── o peso da gota
+  const ag = forward(LIQ[0], 25, 1.2e-3, 1.0);
+  t('γ da água a 25,0 °C = 71,97 mN·m⁻¹', Math.abs(ag.g - 71.97) < 1e-9);
+  t('γ ingênua < γ corrigida (f < 1)', ag.ing < ag.corr, br(ag.ing,2) + ' < ' + br(ag.corr,2));
+  t('γ ingênua / f = γ corrigida', Math.abs(ag.ing/ag.f - ag.corr) < 1e-9);
+  t('a γ corrigida da água reproduz a tabelada a 0,1 %', Math.abs(ag.corr - 71.97)/71.97 < 1e-3,
+    ag.corr.toFixed(3));
+  t('a γ ingênua subestima entre 28 % e 46 %',
+    (ag.corr-ag.ing)/ag.corr > 0.27 && (ag.corr-ag.ing)/ag.corr < 0.47,
+    br((ag.corr-ag.ing)/ag.corr*100,1) + ' %');
+
+  // ── temperatura
+  const agT = forward(LIQ[0], 32, 1.2e-3, 1.0);
+  t('subir T DIMINUI γ e a massa da gota', agT.g < ag.g && agT.m < ag.m,
+    br(agT.g,2) + ' < ' + br(ag.g,2));
+
+  // ── a hipótese do método relativo
+  const s = serie(25, 1.2e-3, 1.0);
+  t('a gota do álcool PA é menor que a da água', s[4].V < s[0].V);
+  t('r/V^(1/3) do álcool PA > o da água', s[4].x > s[0].x,
+    br(s[0].x,3) + ' < ' + br(s[4].x,3));
+  t('f da água > f do álcool PA', s[0].f > s[4].f);
+  const errPA = (s[0].g*s[4].m/s[0].m - s[4].g)/s[4].g*100;
+  const errNa = (s[0].g*s[1].m/s[0].m - s[1].g)/s[1].g*100;
+  t('o método relativo erra MENOS no NaCl que no álcool PA',
+    Math.abs(errNa) < Math.abs(errPA), br(errNa,2) + ' % vs ' + br(errPA,2) + ' %');
+  t('o viés do álcool PA fica entre −2 % e −6 %', errPA < -2 && errPA > -6, br(errPA,2) + ' %');
+
+  // ── unidades
+  t('1 N·m⁻¹ = 1000 dina·cm⁻¹ e 1 mN·m⁻¹ = 1 dina·cm⁻¹', Math.abs(1e3/1000 - 1) < 1e-12);
+
+  // ── Gibbs e CMC
+  const cm = cmcDe(-32.7);
+  t('a interseção das retas recupera a CMC', Math.abs(cm.cmc - 8.2) < 0.6, br(cm.cmc,2));
+  t('o método do JOELHO superestima a CMC', cm.joelho > cm.cmc*1.05, br(cm.joelho,2));
+  const G2 = gammaDe(-32.7, 25, true), G1 = gammaDe(-32.7, 25, false);
+  t('o fator 2 DOBRA Γ', Math.abs(G1/G2 - 2) < 1e-9);
+  t('a área com o fator 2 fica perto de 0,53 nm²',
+    Math.abs(areaNM2(G2) - 0.53)/0.53 < 0.15, br(areaNM2(G2),3) + ' nm²');
+  t('sem o fator 2 a área cai mais de 40 %',
+    (0.53 - areaNM2(G1))/0.53 > 0.40, br(areaNM2(G1),3) + ' nm²');
+
+  const ok = casos.filter(c => c.ok).length;
+  const linhas = casos.map((c,i) =>
+    (c.ok ? '  PASS ' : '  FAIL ') + String(i+1).padStart(2,'0') + ' · ' + c.nome +
+    (c.info ? '   [' + c.info + ']' : '')).join('\n');
+  $('at').innerHTML = casos.length + ' casos · ' + ok + ' aprovados · ' +
+    (casos.length-ok) + ' falharam\n' + linhas;
+  window.__casos = casos;
+  window.__autoteste = (ok === casos.length);
+  return window.__autoteste;
+}
+
+window.__pronto = false;
+(function init(){
+  ['T','L','rmm','vaz'].forEach(id => $(id).addEventListener('input', desenha));
+  ['T','L','rmm','vaz'].forEach(id => $(id).addEventListener('change', desenha));
+  // controle da inclinação de Gibbs (fora do grid, no painel 4)
+  const c4 = document.querySelectorAll('.card')[4];
+  const w = document.createElement('div');
+  w.innerHTML = '<label>inclinação da região linear / mN·m⁻¹ por década</label>' +
+    '<input type="range" id="incl" min="-40" max="-20" step="0.1" value="-32.7">' +
+    '<div class="hint">–32,7 mN·m⁻¹ por década é o valor de um experimento didático publicado ' +
+    'de peso da gota com SDS.</div>';
+  const cg = document.querySelectorAll('.card')[3];
+cg.insertBefore(w, cg.querySelector('.grid'));
+  $('incl').addEventListener('input', desenha);
+  desenha();
+  autoteste();
+  window.__pronto = true;
+})();
+</script></body></html>

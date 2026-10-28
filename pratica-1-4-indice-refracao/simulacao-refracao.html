@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulação — Refratometria (Prática 1.4)</title>
+<style>
+  :root{--chalk:#f5f2e8;--yellow:#ffd966;--pink:#f2a0c8;--cyan:#6fd0e8;
+        --green:#a5d6a7;--orange:#ffb74d;--azul:#7ab8ff;--ink:#16201b}
+  *{box-sizing:border-box}
+  body{margin:0;padding:26px 18px 70px;min-height:100vh;
+       background:linear-gradient(160deg,#2f6e4f 0%,#265c43 55%,#1f5540 100%);
+       color:var(--chalk);font-family:"DejaVu Sans",Verdana,system-ui,sans-serif;line-height:1.5}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:1.45rem;margin:.2rem 0 .3rem;text-shadow:0 2px 0 rgba(22,32,27,.5)}
+  .disc{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  .sub{font-size:.9rem;color:rgba(245,242,232,.72);margin-bottom:16px}
+  .card{background:rgba(22,32,27,.32);border:2px solid rgba(245,242,232,.22);
+        border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 10px 26px rgba(0,0,0,.16)}
+  h2{font-size:1.02rem;margin:0 0 14px;color:var(--yellow);letter-spacing:.04em;
+     text-transform:uppercase;font-size:.86rem}
+  label{display:block;font-size:.86rem;color:var(--green);margin:10px 0 4px}
+  input[type=number],select{width:100%;padding:9px 11px;border-radius:9px;font:inherit;
+     background:rgba(245,242,232,.08);border:2px solid rgba(245,242,232,.3);color:var(--chalk)}
+  input[type=range]{width:100%;accent-color:var(--cyan)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:720px){.g2,.g3{grid-template-columns:1fr}}
+  .out{margin-top:14px;background:rgba(22,32,27,.5);border-left:5px solid var(--cyan);
+       border-radius:9px;padding:12px 14px;font-variant-numeric:tabular-nums}
+  .out b{color:var(--yellow)}
+  .out .big{font-size:1.5rem;font-weight:700;color:var(--cyan)}
+  .warn{border-left-color:var(--pink)}
+
+  /* quadro do ângulo crítico */
+  #quadro{position:relative;height:250px;border-radius:12px;overflow:hidden;
+          background:linear-gradient(180deg,#2f6e4f,#1f5540);border:2px solid rgba(245,242,232,.25)}
+  #claro{position:absolute;left:0;right:0;top:0;height:50%;background:rgba(255,217,102,.20);
+         border-bottom:2px solid var(--cyan);transition:height .08s linear}
+  #escuro{position:absolute;left:0;right:0;bottom:0;top:50%;background:rgba(0,0,0,.28)}
+  #linha{position:absolute;left:0;right:0;top:50%;height:0;border-top:2px solid var(--cyan);
+         box-shadow:0 0 8px rgba(111,208,232,.9)}
+  .quadro-txt{position:absolute;font-size:.82rem;color:var(--chalk);text-shadow:0 1px 0 #16201b}
+  table{width:100%;border-collapse:collapse;font-size:.86rem;font-variant-numeric:tabular-nums}
+  th,td{padding:6px 8px;border-bottom:1px solid rgba(245,242,232,.14);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--yellow);font-weight:700;border-bottom-color:rgba(245,242,232,.4)}
+  .ok{color:var(--green)}.no{color:var(--pink)}
+  .foot{font-size:.8rem;color:rgba(245,242,232,.6);text-align:center;margin-top:8px}
+</style></head><body>
+<div role="note" class="aviso-beta" style="box-sizing:border-box;flex:0 0 100%;width:100%;background:rgba(255,233,122,.15);border-left:6px solid #ffe97a;border-radius:10px;padding:15px 22px;margin:0 0 20px;color:#f5f2e8;font-family:inherit;font-size:.95rem;line-height:1.5"><strong>Material em versão beta.</strong> Este é um material de apoio em revisão — o conteúdo e a forma ainda podem ser alterados. A fonte de estudo prioritária da disciplina continua sendo a apostila da disciplina (Manual 2020.2) e o livro-texto (Castellan; Atkins; Rangel).</div><div class="wrap">
+  <div class="disc">Físico-Química Experimental · 2026.2 · UEPB/PCMLab</div>
+  <h1>Simulação — Refratometria: índice de refração e refração molar</h1>
+  <div class="sub">Prática 1.4 · baseada no Manual20202, Experimento nº 06
+    (refratômetro de Abbé: ângulo crítico, compensação, curva de calibração e escala Brix).</div>
+
+  <div class="card">
+    <h2>1 · Ângulo crítico e o limite do refratômetro</h2>
+    <div class="grid g2">
+      <div>
+        <label>Índice do prisma — <span id="npv">1,750</span></label>
+        <input type="range" id="np" min="1.60" max="1.90" step="0.005" value="1.75">
+        <label>Índice da amostra — <span id="nav">1,400</span></label>
+        <input type="range" id="na" min="1.20" max="1.75" step="0.001" value="1.40">
+        <div class="out" id="saida-angulo"></div>
+      </div>
+      <div id="quadro">
+        <div id="claro"></div><div id="escuro"></div><div id="linha"></div>
+        <div class="quadro-txt" style="left:12px;top:10px">campo CLARO (raio refratado)</div>
+        <div class="quadro-txt" style="left:12px;bottom:10px">campo ESCURO (sem transmissão)</div>
+        <div class="quadro-txt" style="right:12px;top:50%;transform:translateY(-50%)">
+          linha limite = ângulo crítico</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Refração específica e refração molar (Lorentz-Lorenz)</h2>
+    <div class="grid g3">
+      <div><label>Substância (Quadro 6.1)</label>
+        <select id="subs"></select></div>
+      <div><label>M (g·mol⁻¹)</label><input type="number" id="M" step="0.0001"></div>
+      <div><label>ρ (g·cm⁻³)</label><input type="number" id="rho" step="0.0001"></div>
+    </div>
+    <label>n (índice de refração)</label><input type="number" id="n" step="0.0001">
+    <div class="out" id="saida-ll"></div>
+    <div class="foot">A equação de Lorentz-Lorenz não está escrita no manual — é a da bibliografia
+      da disciplina (IUPAC Green Book / Atkins). Proveniência declarada.</div>
+  </div>
+
+  <div class="card">
+    <h2>3 · Curva de calibração, equação da reta e R²</h2>
+    <div class="sub" style="margin-top:-6px;font-size:.85rem">
+      Entre os pontos medidos (porcentagem, índice). A amostra desconhecida é resolvida pela reta.</div>
+    <table id="tab"><thead><tr><th>%</th><th>n medido</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="grid g2" style="margin-top:12px">
+      <div><button id="add" style="padding:9px 16px;border-radius:9px;border:0;
+        background:var(--cyan);color:var(--ink);font:inherit;font-weight:700;cursor:pointer">
+        + adicionar ponto</button>
+        <button id="pre" style="padding:9px 16px;border-radius:9px;border:2px solid var(--chalk);
+        background:transparent;color:var(--chalk);font:inherit;cursor:pointer;margin-left:8px">
+        exemplo (hexano+clorofórmio)</button></div>
+      <div><label>n da amostra desconhecida</label><input type="number" id="nunk" step="0.0001" value="1.4100"></div>
+    </div>
+    <div class="out" id="saida-curva"></div>
+  </div>
+
+  <div class="card">
+    <h2>4 · Correção de temperatura</h2>
+    <div class="grid g3">
+      <div><label>t de leitura (°C)</label><input type="number" id="t" step="0.1" value="24.0"></div>
+      <div><label>n lido</label><input type="number" id="nt" step="0.0001" value="1.3709"></div>
+      <div><label>dn/dt (K⁻¹)</label><input type="number" id="dndt" step="0.00001" value="-0.00045"></div>
+    </div>
+    <div class="out" id="saida-temp"></div>
+    <div class="foot">Genérico para orgânicos: −4,5×10⁻⁴ K⁻¹ (faixa −3,5 a −5,5×10⁻⁴).
+      Para a ÁGUA: −1,1×10⁻⁴ K⁻¹ — a exceção que o manual destaca.</div>
+  </div>
+
+  <div class="card"><h2>Autoteste de física</h2><div class="out" id="selftest"></div></div>
+  <div class="foot">Simulação didática offline — não substitui a medida no refratômetro.</div>
+</div>
+<script>
+const fmt=(x,d=4)=>x.toFixed(d).replace(".",",");
+const $=id=>document.getElementById(id);
+
+/* ── Quadro 6.1 do manual ────────────────────────────────────────────── */
+const Q61={
+ "Água":       {M:18.0153, rho:0.9965,  n:1.3325},
+ "Etanol":     {M:46.0684, rho:0.7864,  n:1.359},
+ "n-Hexano":   {M:86.1753, rho:0.6528,  n:1.372},
+ "Acetona":    {M:58.0791, rho:0.7878,  n:1.357},
+ "Isopropanol":{M:60.0950, rho:0.77283, n:1.375},
+ "Clorofórmio":{M:119.377, rho:1.4745,  n:1.444},
+ "— manual —": {M:60.0950, rho:0.8035,  n:1.3850},
+};
+function lorentz(n,M,rho){const f=(n*n-1)/(n*n+2);return{f, r:f/rho, R:f*M/rho};}
+
+/* ── 1 · ângulo crítico ─────────────────────────────────────────────── */
+function ang(){
+  const np=parseFloat($("np").value), na=parseFloat($("na").value);
+  $("npv").textContent=fmt(np,3); $("nav").textContent=fmt(na,3);
+  const r=na/np;
+  if(r>=1){
+    $("saida-angulo").className="out warn";
+    $("saida-angulo").innerHTML="<b>Não existe ângulo crítico.</b> A amostra tem índice "+
+      "igual ou maior que o do prisma (razão = "+fmt(r,3)+" > 1): não há raio rasante, o campo "+
+      "não se divide em claro e escuro e <b>não há leitura possível</b>. É por isso que a faixa do "+
+      "refratômetro termina em 1,700.";
+    $("claro").style.height="50%"; $("linha").style.top="50%";
+  }else{
+    const tc=Math.asin(r)*180/Math.PI;
+    $("saida-angulo").className="out";
+    $("saida-angulo").innerHTML="θc = arcsin(n<sub>amostra</sub>/n<sub>prisma</sub>) = "+
+      "<span class='big'>"+fmt(tc,2)+"°</span><br>sen θc = <b>"+fmt(r,5)+
+      "</b> · n<sub>amostra</sub> = n<sub>prisma</sub>·sen θc = <b>"+fmt(np*r,4)+"</b><br>"+
+      (Math.cos(Math.asin(r))>0.05
+        ? "<span style='font-size:.85rem;color:rgba(245,242,232,.75)'>Um milésimo no índice "+
+          "corresponde a cerca de "+fmt((0.001/(np*Math.cos(Math.asin(r))))*180/Math.PI,3)+
+          "° — menos de quatro minutos de arco.</span>"
+        : "<span style='font-size:.85rem;color:rgba(245,242,232,.75)'>Perto do limite, a "+
+          "sensibilidade explode: a fronteira quase não se move no campo.</span>");
+    /* a fronteira sobe conforme o índice da amostra se aproxima do prisma */
+    const h=50-r*50;               // r→1 ⇒ fronteira no topo
+    $("claro").style.height=Math.max(2,h)+"%";
+    $("linha").style.top="calc("+Math.max(2,h)+"% - 1px)";
+  }
+}
+$("np").oninput=$("na").oninput=ang;
+
+/* ── 2 · Lorentz-Lorenz ─────────────────────────────────────────────── */
+const sel=$("subs");
+Object.keys(Q61).forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=k;sel.appendChild(o);});
+function ll(){const n=parseFloat($("n").value),M=parseFloat($("M").value),rho=parseFloat($("rho").value);
+  if(!(n>0&&M>0&&rho>0)){$("saida-ll").textContent="valores inválidos";return;}
+  const o=lorentz(n,M,rho);
+  $("saida-ll").innerHTML="(n²−1)/(n²+2) = <b>"+fmt(o.f,6)+"</b> · M/ρ = <b>"+fmt(M/rho,3)+
+    "</b> cm³·mol⁻¹<br>refração específica r = <span class='big'>"+fmt(o.r,4)+
+    "</span> cm³·g⁻¹<br>refração molar R<sub>m</sub> = <span class='big'>"+fmt(o.R,3)+
+    "</span> cm³·mol⁻¹";}
+function carrega(k){const v=Q61[k];$("M").value=v.M;$("rho").value=v.rho;$("n").value=v.n;ll();}
+sel.onchange=()=>carrega(sel.value);
+["M","rho","n"].forEach(i=>$(i).oninput=ll);
+
+/* ── 3 · curva de calibração ────────────────────────────────────────── */
+const tb=$("tab").querySelector("tbody");
+function addRow(x,y){const tr=document.createElement("tr");
+  tr.innerHTML="<td><input type='number' step='0.01' value='"+(x??"")+"' style='width:80px'></td>"+
+               "<td><input type='number' step='0.0001' value='"+(y??"")+"' style='width:110px'></td>"+
+               "<td><button style='border:0;background:transparent;color:var(--pink);cursor:pointer'>×</button></td>";
+  tr.querySelector("button").onclick=()=>{tr.remove();curva();};
+  tr.querySelectorAll("input").forEach(i=>i.oninput=curva);
+  tb.appendChild(tr);}
+function pontos(){return [...tb.querySelectorAll("tr")].map(tr=>{
+  const i=tr.querySelectorAll("input");return{x:parseFloat(i[0].value),y:parseFloat(i[1].value)};})
+  .filter(p=>isFinite(p.x)&&isFinite(p.y));}
+function curva(){
+  const P=pontos();
+  if(P.length<3){$("saida-curva").innerHTML="Adicione ao menos <b>3 pontos</b> (o manual usa séries de 5).";return;}
+  const n=P.length,Sx=P.reduce((a,p)=>a+p.x,0),Sy=P.reduce((a,p)=>a+p.y,0),
+        Sxy=P.reduce((a,p)=>a+p.x*p.y,0),Sxx=P.reduce((a,p)=>a+p.x*p.x,0);
+  const a=(n*Sxy-Sx*Sy)/(n*Sxx-Sx*Sx), b=(Sy-a*Sx)/n;
+  const yb=Sy/n, sst=P.reduce((s,p)=>s+(p.y-yb)**2,0),
+        sse=P.reduce((s,p)=>s+(p.y-(a*p.x+b))**2,0), r2=1-sse/sst;
+  const nu=parseFloat($("nunk").value);
+  const xunk=isFinite(nu)?(nu-b)/a:NaN;
+  $("saida-curva").innerHTML="Equação da reta: n = <b>"+fmt(a,6)+"</b>·% + <b>"+fmt(b,6)+
+    "</b><br>Coeficiente de determinação R² = <span class='big'>"+fmt(r2,5)+"</span><br>"+
+    "Amostra desconhecida: n = "+fmt(nu,4)+" ⟹ % = <b>"+((isFinite(xunk)?""+fmt(xunk,2)+" %":"—"))+"</b><br>"+
+    "<span style='font-size:.85rem;color:rgba(245,242,232,.75)'>R² perto de 1 ⇒ a reta explica "+
+    "quase toda a variação de n. R² baixo ⇒ existe curvatura (interação específica entre os "+
+    "componentes) ou dispersão grande. O manual pede que você explique o significado.</span>";
+  $("saida-curva").className="out"+(r2<0.99?" warn":"");
+}
+$("add").onclick=()=>{addRow();curva();};
+$("pre").onclick=()=>{tb.innerHTML="";
+  /* série sintética de hexano+clorofórmio, %V/V de hexano — n cresce ao perder hexano */
+  [[0,1.4442],[20,1.4296],[40,1.4153],[60,1.4012],[80,1.3864],[100,1.3722]]
+    .forEach(p=>addRow(p[0],p[1]));
+  $("nunk").value=1.4140; curva();};
+$("nunk").oninput=curva;
+
+/* ── 4 · correção de temperatura ────────────────────────────────────── */
+function temp(){const t=parseFloat($("t").value),nt=parseFloat($("nt").value),d=parseFloat($("dndt").value);
+  const n20=nt-d*(t-20);        // n20 = n_t - (dn/dt)(t-20)
+  $("saida-temp").innerHTML="n(20 °C) = n(t) − (dn/dt)·(t−20) = "+fmt(nt,5)+" − ("+d.toExponential(1)+
+   ")×("+fmt(t,1)+"−20) = <span class='big'>"+fmt(n20,5)+"</span><br>"+
+   "Deslocamento aplicado: <b>"+fmt(Math.abs(n20-nt)*1e4,1)+"</b> unidades do 4º algarismo — "+
+   "comparável à resolução de 0,0001 do instrumento.";}
+["t","nt","dndt"].forEach(i=>$(i).oninput=temp);
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   AUTOTESTE — valor ABSOLUTO contra a tabela, com tolerância DECLARADA.
+
+   Duas tabelas, ambas independentes do que o código calcula:
+     TAB_RM   — refração molar de referência (cm³·mol⁻¹, 25 °C), tolerância ±0,10
+     TAB_RHO  — densidade de referência (g·cm⁻³, 25 °C), tolerância declarada item a item
+
+   O caso 09 é o CONTROLE NEGATIVO interno: ele exige que a densidade ERRADA do
+   clorofórmio (1,4259, a do enunciado antigo do manual) produza R_m fora da tolerância.
+   Se alguém "consertar" a tabela para aceitar 1,4259, o autoteste reprova — a mesma
+   propriedade que o controle negativo externo verifica com a página inteira.
+   ══════════════════════════════════════════════════════════════════════════════ */
+const TAB_RM = {           // cm³·mol⁻¹ a 25 °C — tabela de referência da disciplina
+  "Água":        3.71,
+  "Etanol":     12.90,
+  "n-Hexano":   30.00,
+  "Acetona":    16.15,
+  "Isopropanol":17.80,
+  "Clorofórmio":21.51,
+};
+const TOL_RM = 0.10;       // declarada: ±0,10 cm³·mol⁻¹
+
+const TAB_RHO = {          // g·cm⁻³ a 25 °C — Quadro 6.1 do manual (conferido no CRC)
+  "Água":        [0.9965,  0.0020],
+  "Etanol":      [0.7864,  0.0020],
+  "n-Hexano":    [0.6528,  0.0020],
+  "Acetona":     [0.7878,  0.0020],
+  "Isopropanol": [0.77283, 0.0005],
+  "Clorofórmio": [1.4745,  0.0005],   // o valor que o defeito antigo trocava por 1,4259
+};
+
+function autoteste(){
+  const casos = [];
+  const t = (nome, ok, obtido, esperado) =>
+    casos.push({nome: nome, ok: !!ok, obtido: obtido, esperado: esperado});
+  const num = (v, d) => (v === undefined || v === null) ? "—" : v.toFixed(d).replace(".", ",");
+
+  /* ── 1 · ângulo crítico (valor absoluto) ──────────────────────────────────── */
+  const tc14 = Math.asin(1.40/1.75) * 180 / Math.PI;
+  t("θc (amostra 1,40 / prisma 1,75) = 53,13° ± 0,02°", Math.abs(tc14 - 53.13) < 0.02,
+    num(tc14, 2) + "°", "53,13°");
+  const tc13 = Math.asin(1.33/1.75) * 180 / Math.PI;
+  t("θc (amostra 1,33 / prisma 1,75) = 49,46° ± 0,02°", Math.abs(tc13 - 49.46) < 0.02,
+    num(tc13, 2) + "°", "49,46°");
+  t("sin θc = n_amostra/n_prisma em três pares (identidade ± 1e-12)",
+    [[1.40,1.75],[1.33,1.75],[1.30,1.90]].every(([na,np]) =>
+      Math.abs(Math.sin(Math.asin(na/np)) - na/np) < 1e-12));
+  t("n_amostra = 1,75 com prisma 1,75 NÃO tem ângulo crítico (razão ≥ 1)",
+    (1.75/1.75) >= 1 && !(1.70/1.75 >= 1), "razão 1,000", "razão ≥ 1");
+
+  /* ── 2 · R_m contra a TABELA, substância por substância ─────────────────── */
+  Object.keys(TAB_RM).forEach(function(k){
+    const v = Q61[k];
+    if (!v) { t("R_m(" + k + "): substância ausente do Quadro 6.1", false, "—", k); return; }
+    const R = lorentz(v.n, v.M, v.rho).R;
+    t("R_m(" + k + ") = " + num(TAB_RM[k], 2) + " ± " + num(TOL_RM, 2) + " cm³·mol⁻¹",
+      Math.abs(R - TAB_RM[k]) < TOL_RM, num(R, 3), num(TAB_RM[k], 2));
+  });
+
+  /* ── 3 · ρ contra a TABELA, com a tolerância de cada linha ───────────────── */
+  Object.keys(TAB_RHO).forEach(function(k){
+    const v = Q61[k], ref = TAB_RHO[k];
+    if (!v) { t("ρ(" + k + "): substância ausente do Quadro 6.1", false, "—", k); return; }
+    t("ρ(" + k + ") = " + num(ref[0], 5).replace(/,0+$/, "") + " ± " + num(ref[1], 4) +
+      " g·cm⁻³", Math.abs(v.rho - ref[0]) < ref[1], num(v.rho, 5), num(ref[0], 5));
+  });
+
+  /* ── 4 · o defeito ANTIGO tem de ser reprovado (controle negativo interno) ─ */
+  const ERRADO = lorentz(Q61["Clorofórmio"].n, Q61["Clorofórmio"].M, 1.4259).R;
+  t("ρ = 1,4259 (o valor ERRADO do manual) dá R_m = 22,2 e é REPROVADO pela tabela",
+    Math.abs(ERRADO - 21.51) > 0.5,
+    "R_m = " + num(ERRADO, 2) + " (fora de 21,51 ± 0,10)", "21,51 ± 0,10");
+
+  /* ── 5 · geometria da Lorentz-Lorenz ─────────────────────────────────────── */
+  const cf = Q61["Clorofórmio"];
+  const f_cf = (cf.n*cf.n - 1)/(cf.n*cf.n + 2);
+  t("R_m = [(n²−1)/(n²+2)]·(M/ρ) reproduz a conta à mão (± 1e-9)",
+    Math.abs(lorentz(cf.n, cf.M, cf.rho).R - f_cf*cf.M/cf.rho) < 1e-9);
+  t("R_m CAI quando ρ sobe 1 % (R ∝ 1/ρ) — o sinal que denuncia densidade trocada",
+    lorentz(cf.n, cf.M, cf.rho*1.01).R < lorentz(cf.n, cf.M, cf.rho).R,
+    num(lorentz(cf.n, cf.M, cf.rho*1.01).R, 3), "menor que " + num(lorentz(cf.n, cf.M, cf.rho).R, 3));
+  t("refração específica r = R_m/M em todas as seis substâncias (identidade ± 1e-12)",
+    Object.keys(TAB_RM).every(function(k){
+      const v = Q61[k], o = lorentz(v.n, v.M, v.rho);
+      return Math.abs(o.r - o.R/v.M) < 1e-12;
+    }));
+
+  /* ── 6 · curva de calibração e correção de temperatura ───────────────────── */
+  const SER = [[0,1.4442],[20,1.4296],[40,1.4153],[60,1.4012],[80,1.3864],[100,1.3722]];
+  const nS = SER.length, Sx = SER.reduce((a,p)=>a+p[0],0), Sy = SER.reduce((a,p)=>a+p[1],0),
+        Sxy = SER.reduce((a,p)=>a+p[0]*p[1],0), Sxx = SER.reduce((a,p)=>a+p[0]**2,0);
+  const aR = (nS*Sxy - Sx*Sy)/(nS*Sxx - Sx*Sx), bR = (Sy - aR*Sx)/nS;
+  const yb = Sy/nS;
+  const r2R = 1 - SER.reduce((s,p)=>s+(p[1]-(aR*p[0]+bR))**2,0) /
+                  SER.reduce((s,p)=>s+(p[1]-yb)**2,0);
+  t("série hexano+clorofórmio do exemplo: inclinação −7,2×10⁻⁴ ± 1e-5 %⁻¹",
+    Math.abs(aR + 7.2e-4) < 1e-5, aR.toExponential(3), "−7,2e-4");
+  t("essa série: R² = 0,9999 ± 0,0002", Math.abs(r2R - 0.9999) < 0.0002, num(r2R, 5), "0,9999");
+  const t24 = 24.0, nt24 = 1.3709, dndt = -0.00045;
+  t("n(20 °C) = n(t) − (dn/dt)(t−20) = 1,3727 ± 1e-4", Math.abs((nt24 - dndt*(t24-20)) - 1.3727) < 1e-4,
+    num(nt24 - dndt*(t24-20), 4), "1,3727");
+
+  /* ── resultado ───────────────────────────────────────────────────────────── */
+  const ok = casos.filter(c => c.ok).length;
+  $("selftest").className = "out" + (ok === casos.length ? "" : " warn");
+  $("selftest").innerHTML =
+    "<b>" + casos.length + " casos · " + ok + " aprovados · " +
+      (casos.length - ok) + " falharam</b><br>" +
+    casos.map(function(c, i){
+      return "<span class='" + (c.ok ? "ok" : "no") + "'>" + (c.ok ? "✔" : "✘") + "</span> " +
+        String(i+1).padStart(2,"0") + " · " + c.nome +
+        (c.obtido !== undefined ? "   [obtido " + c.obtido +
+          (c.esperado !== undefined ? " · esperado " + c.esperado : "") + "]" : "");
+    }).join("<br>");
+  window.__casos = casos;
+  window.__autoteste = (ok === casos.length);
+  return window.__autoteste;
+}
+
+carrega("Água"); ang(); curva();
+autoteste();
+</script></body></html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulação — Constante de Dissociação por Titulação Potenciométrica (Prática 2.4)</title>
+<style>
+  :root{--chalk:#f5f2e8;--yellow:#ffe97a;--pink:#e8a0d8;--cyan:#7fd4e8;--green:#a5d6a7;
+        --orange:#ffb74d;--ink:#16201b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:linear-gradient(160deg,#2f6e4f,#265c43 55%,#1f5540);color:var(--chalk);
+       font-family:"DejaVu Sans","Verdana",system-ui,sans-serif;line-height:1.5;padding:26px 18px 70px}
+  .wrap{max-width:1080px;margin:0 auto}
+  header{margin-bottom:20px}
+  .disc{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan)}
+  h1{font-size:1.42rem;margin:.25rem 0 .4rem;text-shadow:0 2px 0 rgba(22,32,27,.55)}
+  .meta{font-size:.9rem;color:rgba(245,242,232,.75)}
+  .card{background:rgba(22,32,27,.30);border:2px solid rgba(245,242,232,.2);border-radius:16px;
+        padding:20px;margin-top:18px}
+  .card h2{font-size:1.06rem;color:var(--cyan);margin-bottom:12px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  canvas{background:rgba(15,40,30,.55);border-radius:12px;border:1px solid rgba(245,242,232,.18);
+         max-width:100%}
+  label{font-size:.85rem;color:rgba(245,242,232,.85);display:block;margin-top:10px}
+  input[type=number],select{width:150px;background:rgba(245,242,232,.08);
+        border:1.5px solid rgba(245,242,232,.3);color:var(--chalk);border-radius:8px;
+        padding:5px 8px;font:inherit;font-size:.9rem}
+  input[type=range]{width:100%;accent-color:#7fd4e8;margin-top:4px}
+  .out{font-size:.94rem;background:rgba(22,32,27,.42);border-left:5px solid var(--cyan);
+       border-radius:8px;padding:11px 13px;margin-top:12px;white-space:pre-wrap}
+  .out b{color:var(--yellow)}
+  .ok{color:var(--green)} .no{color:var(--pink)}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:10px}
+  th,td{padding:4px 7px;border-bottom:1px solid rgba(245,242,232,.14);text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--yellow);font-weight:700}
+  .hint{font-size:.82rem;color:rgba(245,242,232,.62);margin-top:10px}
+  .k{color:var(--cyan);font-weight:700}
+  pre{font-size:.82rem;background:rgba(22,32,27,.5);border-radius:8px;padding:11px;overflow:auto;
+      white-space:pre-wrap}
+</style></head><body>
+<div role="note" class="aviso-beta" style="box-sizing:border-box;flex:0 0 100%;width:100%;background:rgba(255,233,122,.15);border-left:6px solid #ffe97a;border-radius:10px;padding:15px 22px;margin:0 0 20px;color:#f5f2e8;font-family:inherit;font-size:.95rem;line-height:1.5"><strong>Material em versão beta.</strong> Este é um material de apoio em revisão — o conteúdo e a forma ainda podem ser alterados. A fonte de estudo prioritária da disciplina continua sendo a apostila da disciplina (Manual 2020.2) e o livro-texto (Castellan; Atkins; Rangel).</div>
+<div class="wrap">
+  <header>
+    <div class="disc">Físico-Química Experimental · 2026.2 · UEPB/PCMLab</div>
+    <h1>Simulação — Prática 2.4: constante de dissociação por titulação potenciométrica</h1>
+    <div class="meta">
+      Ácido acético titulado com NaOH, com <b>pHmetro</b>; curva <b>pH × V(NaOH)</b>; pKa pela
+      meia-equivalência e pela derivada; correção de <b>atividade</b> (Debye-Hückel).<br>
+      <b>Fonte de procedimento:</b> Manual20202 (apostila <i>em uso</i> da disciplina) —
+      «EXPERIMENTO Nº10: … TITULAÇÃO POTENCIOMÉTRICA», linhas 3465-3783.<br>
+      Os números desta página são <b>modelos didáticos declarados</b> — não são medidas de bancada.
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>1 · O sistema e as condições declaradas</h2>
+    <div class="grid">
+      <div>
+        <label>Concentração do ácido / mol·L⁻¹</label>
+        <input type="number" id="ca" value="0.0500" step="0.005" min="0.005" max="0.2">
+        <label>Concentração do NaOH / mol·L⁻¹</label>
+        <input type="number" id="cb" value="0.500" step="0.05" min="0.05" max="2">
+        <label>pKa termodinâmico do ácido</label>
+        <input type="number" id="pka" value="4.756" step="0.01" min="2" max="10">
+        <label>Temperatura: <b id="lbT">25,0 °C</b></label>
+        <input type="range" id="T" min="10" max="40" step="0.5" value="25">
+      </div>
+      <div class="out" id="s1"></div>
+    </div>
+    <div class="hint">Volume de ácido fixo em <b>100,0 mL</b>. O volume de equivalência sai da
+      estequiometria: V_eq = n(ácido)/c(base).</div>
+  </div>
+
+  <div class="card">
+    <h2>2 · A curva de titulação e a derivada</h2>
+    <div class="grid">
+      <canvas id="g1" width="520" height="330"></canvas>
+      <canvas id="g2" width="520" height="330"></canvas>
+    </div>
+    <div class="out" id="s2"></div>
+    <div class="hint">A curva (esquerda) tem platô de tampão, salto e cauda básica. A derivada
+      (direita) tem um PICO no volume de equivalência.</div>
+  </div>
+
+  <div class="card">
+    <h2>3 · A planilha de volume e pH</h2>
+    <table id="tab">
+      <thead><tr><th>V(NaOH) / mL</th><th>pH (modelo)</th><th>dpH/dV</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="out" id="s3"></div>
+  </div>
+
+  <div class="card">
+    <h2>4 · O pKa aparente e a correção de atividade</h2>
+    <div class="out" id="s4"></div>
+    <div class="hint">Aumente a concentração do ácido: a força iônica sobe, o coeficiente de
+      atividade do acetato cai, e o pKa APARENTE se afasta do termodinâmico. A correção o
+      devolve — sempre.</div>
+  </div>
+
+  <div class="card">
+    <h2>5 · Autoteste embutido</h2>
+    <pre id="at">rodando…</pre>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════════
+   MODELO DIDÁTICO DECLARADO
+   V_ácido = 100,0 mL (fixo). V_eq = c_ácido·V_ácido / c_base.
+   pH(V) resolvido por BALANÇO DE CARGAS com Kw incluído (sem aproximação):
+       [H+] + [Na+] = [OH-] + [A-],   [A-] = Ka_app·c_HA0/([H+]+Ka_app)
+   O pHmetro lê ATIVIDADE: o valor na meia-equivalência é o pKa APARENTE,
+       pKa_app = pKa_termo + log10(γ(A-)),   γ de Debye-Hückel estendida.
+   ══════════════════════════════════════════════════════════════════════════════ */
+const V_ACIDO = 100.0;        // mL
+const KW = 1e-14;
+const A_DH = 0.509;           // L^1/2 mol^-1/2 a 25 °C
+const BA_DH = 1.5;
+
+function solveH(ca0, cna, Ka){
+  let lo = 1e-14, hi = 1.0;
+  for(let i=0;i<120;i++){
+    const mid = Math.sqrt(lo*hi);
+    const f = mid + cna - KW/mid - Ka*ca0/(mid + Ka);
+    if(f > 0) hi = mid; else lo = mid;   // f cresce com h → f>0 ⇒ raiz abaixo
+  }
+  return Math.sqrt(lo*hi);
+}
+function pHde(V, ca, cb, KaApp){
+  const VT = (V_ACIDO + V)/1000.0;
+  const ca0 = ca*V_ACIDO/1000.0/VT;
+  const cna = cb*V/1000.0/VT;
+  return -Math.log10(solveH(ca0, cna, KaApp));
+}
+function gammaI(I){
+  if(I <= 0) return 1.0;
+  const sq = Math.sqrt(I);
+  return Math.pow(10, -A_DH*1*sq/(1 + BA_DH*sq));
+}
+function Veq(ca, cb){ return ca*V_ACIDO/cb; }
+
+const GRADE = [0,1,2,3,4,4.5,5,5.2,5.5,6,7,8,9,9.5,9.8,10,10.2,10.5,11,12];
+
+function leEntradas(){
+  const ca = parseFloat($('ca').value) || 0.05;
+  const cb = parseFloat($('cb').value) || 0.5;
+  const pkaT = parseFloat($('pka').value) || 4.756;
+  const T = parseFloat($('T').value);
+  return {ca, cb, pkaT, T};
+}
+function modeloTitulacao(e){
+  const veq = Veq(e.ca, e.cb);
+  const vmeia = veq/2;
+  const VTh = (V_ACIDO + vmeia)/1000.0;
+  const I = (e.cb*vmeia/1000.0)/VTh;      // ≈ c(Na+) na meia-equivalência
+  const g = gammaI(I);
+  const pkaApp = e.pkaT + Math.log10(g);  // log10(g) < 0
+  const KaApp = Math.pow(10, -pkaApp);
+  const V = GRADE.map(x => Math.min(x, Math.max(14, veq*1.35)));
+  const pH = V.map(v => pHde(v, e.ca, e.cb, KaApp));
+  const d = [];
+  for(let i=0;i<V.length-1;i++){
+    d.push([(V[i]+V[i+1])/2, (pH[i+1]-pH[i])/(V[i+1]-V[i])]);
+  }
+  return {veq, vmeia, I, g, pkaApp, KaApp, V, pH, d, dPka: -Math.log10(g)};
+}
+
+const $ = id => document.getElementById(id);
+let ultimo = null;
+
+function pinta(cvs, xs, ys, rotY, cor){
+  const g = cvs.getContext('2d'), W = cvs.width, H = cvs.height;
+  g.clearRect(0,0,W,H);
+  const L=58, Rr=14, Tt=16, B=40;
+  const xmin=0, xmax=Math.max(...xs)*1.05 || 1;
+  const ymin=Math.min(...ys), ymax=Math.max(...ys);
+  const py = Math.max((ymax-ymin)*0.12, 1e-6);
+  const y0=ymin-py, y1=ymax+py;
+  const X = x => L + (x-xmin)/(xmax-xmin)*(W-L-Rr);
+  const Y = y => (H-B) - (y-y0)/(y1-y0)*((H-B)-Tt);
+  g.strokeStyle='rgba(245,242,232,.85)'; g.lineWidth=1.6;
+  g.beginPath(); g.moveTo(L,Tt); g.lineTo(L,H-B); g.lineTo(W-Rr,H-B); g.stroke();
+  g.fillStyle='rgba(245,242,232,.85)'; g.font='11px sans-serif';
+  g.fillText(rotY, 6, Tt+10);
+  g.fillText('V(NaOH) / mL', W-96, H-12);
+  for(let k=0;k<=4;k++){
+    const xv = xmin + k/4*(xmax-xmin);
+    g.fillText(xv.toFixed(0), X(xv)-8, H-B+15);
+  }
+  for(let k=0;k<=3;k++){
+    const yv = y0 + k/3*(y1-y0);
+    g.fillText(yv.toFixed(2).replace('.',','), 6, Y(yv)+4);
+  }
+  g.strokeStyle=cor; g.lineWidth=2.2;
+  g.beginPath(); g.moveTo(X(xs[0]), Y(ys[0]));
+  for(let i=1;i<xs.length;i++) g.lineTo(X(xs[i]), Y(ys[i]));
+  g.stroke();
+  g.fillStyle='#ffd966';
+  xs.forEach((x,i)=>{ g.beginPath(); g.arc(X(x), Y(ys[i]), 3.8, 0, 2*Math.PI); g.fill(); });
+}
+
+function desenha(){
+  const e = leEntradas();
+  const m = modeloTitulacao(e);
+  ultimo = {...e, ...m};
+
+  $('lbT').textContent = e.T.toFixed(1).replace('.',',') + ' °C';
+  $('s1').innerHTML =
+    'V_ácido = <b>100,0 mL</b>   ·   n(ácido) = <b>' +
+      (e.ca*V_ACIDO).toFixed(3).replace('.',',') + ' mmol</b>   ·   T = <b>' +
+      e.T.toFixed(1).replace('.',',') + ' °C</b>\n' +
+    'V(equivalência) = n/c(base) = <b>' + m.veq.toFixed(2).replace('.',',') + ' mL</b>' +
+    '   ·   meia-equivalência = <b>' + m.vmeia.toFixed(2).replace('.',',') + ' mL</b>\n' +
+    'pKa termodinâmico = <b>' + e.pkaT.toFixed(3).replace('.',',') + '</b>' +
+    '   →   pKa APARENTE (o que o eletrodo lê) = <b>' +
+      m.pkaApp.toFixed(3).replace('.',',') + '</b>';
+
+  let th = '';
+  for(let i=0;i<m.V.length;i++){
+    th += '<tr><td>' + m.V[i].toFixed(1).replace('.',',') + '</td><td>' +
+      m.pH[i].toFixed(2).replace('.',',') + '</td><td>' +
+      (i < m.d.length ? m.d[i][1].toFixed(2).replace('.',',') : '—') + '</td></tr>';
+  }
+  $('tab').querySelector('tbody').innerHTML = th;
+
+  pinta($('g1'), m.V, m.pH, 'pH', '#7fd4e8');
+  pinta($('g2'), m.d.map(p=>p[0]), m.d.map(p=>p[1]), 'dpH/dV', '#e8a0d8');
+
+  const imax = m.d.reduce((a,p,i)=> p[1] > m.d[a][1] ? i : a, 0);
+  $('s2').innerHTML =
+    'pH inicial (V = 0) = <b>' + m.pH[0].toFixed(2).replace('.',',') + '</b>\n' +
+    'pH na meia-equivalência = <b>' +
+      pHde(m.vmeia, e.ca, e.cb, m.KaApp).toFixed(2).replace('.',',') + '</b>' +
+      '   (= pKa aparente, por construção)\n' +
+    'pico da derivada em V = <b>' + m.d[imax][0].toFixed(1).replace('.',',') + ' mL</b>' +
+      '   (o ponto de equivalência, ' + m.veq.toFixed(2).replace('.',',') + ' mL)\n' +
+    'pH no ponto de equivalência = <b>' +
+      pHde(m.veq, e.ca, e.cb, m.KaApp).toFixed(2).replace('.',',') +
+      '</b>  →  BÁSICO (o sal hidrolisa), NÃO 7';
+
+  const csal = (e.ca*V_ACIDO/1000.0)/((V_ACIDO+m.veq)/1000.0);
+  const pHeqAprox = 7 + 0.5*(m.pkaApp + Math.log10(csal));
+  $('s3').innerHTML =
+    'concentração do sal no ponto de equivalência: c(A⁻) = <b>' +
+      csal.toFixed(5).replace('.',',') + ' mol·L⁻¹</b>\n' +
+    'pH_eq pela fórmula 7 + ½(pKa + log c_sal) = <b>' +
+      pHeqAprox.toFixed(2).replace('.',',') + '</b>';
+
+  const KaApp = m.KaApp;
+  $('s4').innerHTML =
+    'força iônica na meia-equivalência: I ≈ <b>' +
+      m.I.toFixed(5).replace('.',',') + ' mol·L⁻¹</b>\n' +
+    'coeficiente de atividade do acetato: γ(A⁻) = <b>' +
+      m.g.toFixed(4).replace('.',',') + '</b>   (γ < 1: o íon é estabilizado)\n' +
+    'correção de atividade: ΔpKa = −log γ(A⁻) = <b>' +
+      m.dPka.toFixed(3).replace('.',',') + '</b>\n' +
+    'pKa aparente ' + m.pkaApp.toFixed(3).replace('.',',') + '  +  ΔpKa ' +
+      m.dPka.toFixed(3).replace('.',',') + '  =  <b>' +
+      (m.pkaApp + m.dPka).toFixed(3).replace('.',',') + '</b>  (o pKa termodinâmico)\n' +
+    'Ka aparente = 10^(−pKa_app) = <b>' + (KaApp*1e5).toFixed(3).replace('.',',') +
+      '×10⁻⁵ mol·L⁻¹</b>';
+}
+
+/* ═══════════════════════ AUTOTESTE — roda DENTRO da página, sobre o mesmo código */
+function autoteste(){
+  const casos = [];
+  const t = (nome, ok, info) => casos.push({nome, ok: !!ok, info: info||''});
+  const E = {ca:0.0500, cb:0.500, pkaT:4.756, T:25};
+  const m = modeloTitulacao(E);
+
+  // 1 · V_eq pela estequiometria
+  t('V_eq = c_ácido·V_ácido/c_base = 10,00 mL', Math.abs(m.veq - 10.0) < 1e-9,
+    m.veq.toFixed(3));
+  // 2 · meia-equivalência é metade
+  t('meia-equivalência = V_eq/2 = 5,00 mL', Math.abs(m.vmeia - 5.0) < 1e-9);
+  // 3 · o pH na meia-equivalência É o pKa aparente (por construção)
+  const pHmeia = pHde(m.vmeia, E.ca, E.cb, m.KaApp);
+  t('pH na meia-equivalência = pKa aparente', Math.abs(pHmeia - m.pkaApp) < 1e-3,
+    pHmeia.toFixed(3));
+  // 4 · o pKa aparente está ABAIXO do termodinâmico
+  t('pKa aparente < pKa termodinâmico', m.pkaApp < E.pkaT,
+    m.pkaApp.toFixed(3) + ' < ' + E.pkaT);
+  // 5 · a correção devolve o termodinâmico
+  t('pKa aparente + ΔpKa = pKa termodinâmico', Math.abs(m.pkaApp + m.dPka - E.pkaT) < 1e-9);
+  // 6 · γ < 1
+  t('γ(A⁻) está entre 0 e 1', m.g > 0 && m.g < 1, m.g.toFixed(4));
+  // 7 · pH inicial ≈ ½(pKa − log c)
+  const pH0teo = 0.5*(m.pkaApp - Math.log10(E.ca));
+  t('pH inicial ≈ ½(pKa − log c) (a 0,05)', Math.abs(m.pH[0] - pH0teo) < 0.05,
+    m.pH[0].toFixed(3) + ' vs ' + pH0teo.toFixed(3));
+  // 8 · pH no ponto de equivalência > 7
+  const pHeq = pHde(m.veq, E.ca, E.cb, m.KaApp);
+  t('pH de equivalência > 7 (básico)', pHeq > 7, pHeq.toFixed(3));
+  // 9 · pH_eq ≈ 7 + ½(pKa + log c_sal) (a 0,05)
+  const csal = (E.ca*V_ACIDO/1000.0)/((V_ACIDO+m.veq)/1000.0);
+  const pHeqA = 7 + 0.5*(m.pkaApp + Math.log10(csal));
+  t('pH_eq ≈ 7 + ½(pKa + log c_sal) (a 0,05)', Math.abs(pHeq - pHeqA) < 0.05,
+    pHeq.toFixed(3) + ' vs ' + pHeqA.toFixed(3));
+  // 10 · o pico da derivada cai perto do V_eq
+  const imax = m.d.reduce((a,p,i)=> p[1] > m.d[a][1] ? i : a, 0);
+  t('pico de dpH/dV dentro de 0,5 mL do V_eq', Math.abs(m.d[imax][0] - m.veq) < 0.5,
+    m.d[imax][0].toFixed(2));
+  // 11 · a derivada máxima é MUITO maior que a média das outras
+  const outras = m.d.filter((p,i)=> i !== imax).map(p=>p[1]);
+  const mediaOutras = outras.reduce((a,b)=>a+b,0)/outras.length;
+  t('derivada no pico > 5× a média fora do salto', m.d[imax][1] > 5*mediaOutras,
+    m.d[imax][1].toFixed(2) + ' vs ' + mediaOutras.toFixed(2));
+  // 12 · pH cresce monotonicamente com V
+  t('pH cresce monotonicamente com V', m.pH.every((x,i)=> i===0 || x > m.pH[i-1]));
+  // 13 · aumentar a concentração do ácido AUMENTA I e BAIXA o pKa aparente
+  const m2 = modeloTitulacao({ca:0.100, cb:0.500, pkaT:4.756, T:25});
+  t('dobrar c_ácido: I sobe e pKa aparente CAI',
+    m2.I > m.I && m2.pkaApp < m.pkaApp,
+    'I ' + m2.I.toFixed(4) + ' · pKa ' + m2.pkaApp.toFixed(3));
+  // 14 · dobrar c_base reduz o V_eq à metade
+  const m3 = modeloTitulacao({ca:0.0500, cb:1.000, pkaT:4.756, T:25});
+  t('dobrar c_base → V_eq cai à metade', Math.abs(m3.veq - m.veq/2) < 1e-9);
+  // 15 · Ka aparente = 10^(−pKa aparente)
+  t('Ka_app = 10^(−pKa_app)', Math.abs(m.KaApp - Math.pow(10,-m.pkaApp)) < 1e-18);
+  // 16 · Nernst: 59,16 mV/pH a 25,0 °C e cresce com T
+  const slope = T => Math.log(10)*8.314462618*(T+273.15)/96485.33212*1000;
+  t('inclinação de Nernst = 59,16 mV/pH a 25,0 °C', Math.abs(slope(25)-59.16) < 0.02,
+    slope(25).toFixed(2));
+  t('a inclinação AUMENTA com a temperatura', slope(30) > slope(25),
+    slope(25).toFixed(2) + ' → ' + slope(30).toFixed(2));
+  // 17 · a ΔpKa é maior (pKa aparente menor) quanto maior a força iônica
+  t('ΔpKa cresce com a força iônica', m2.dPka > m.dPka,
+    m.dPka.toFixed(3) + ' → ' + m2.dPka.toFixed(3));
+
+  const ok = casos.filter(c => c.ok).length;
+  const linhas = casos.map((c,i) =>
+    (c.ok ? '  PASS ' : '  FAIL ') + String(i+1).padStart(2,'0') + ' · ' + c.nome +
+    (c.info ? '   [' + c.info + ']' : '')).join('\n');
+  $('at').innerHTML = casos.length + ' casos · ' + ok + ' aprovados · ' +
+    (casos.length-ok) + ' falharam\n' + linhas;
+  window.__casos = casos;
+  window.__autoteste = (ok === casos.length);
+  return window.__autoteste;
+}
+
+window.__pronto = false;
+(function init(){
+  ['ca','cb','pka','T'].forEach(id => $(id).addEventListener('input', desenha));
+  desenha();
+  autoteste();
+  window.__pronto = true;
+})();
+</script></body></html>
